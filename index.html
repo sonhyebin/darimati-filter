@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="rgb(43,46,48)">
+<meta name="mobile-web-app-capable" content="yes">
+<title>DARIMATI — Race Day Filter</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Manrope:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --orange:#F97316; --orange-light:#FB923C;
+  --charcoal:rgb(43,46,48); --text-light:rgba(255,255,255,0.93);
+  --text-muted:rgba(255,255,255,0.55); --text-dark:rgba(0,0,0,0.81);
+  --sage:rgb(95,107,99); --safe-bottom:env(safe-area-inset-bottom,0px);
+  --serif:"DM Serif Display",Georgia,serif;
+  --sans:"Geist Sans","Geist",-apple-system,BlinkMacSystemFont,sans-serif;
+  --display:"Manrope","Bricolage Grotesque",sans-serif;
+}
+html,body { width:100%; height:100%; overflow:hidden; background:#000;
+  font-family:var(--sans); touch-action:manipulation; }
+
+/* ── LANDING ── */
+#permissionScreen {
+  position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
+  background:var(--charcoal); color:var(--text-light);
+  overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
+}
+.landing-nav {
+  position:fixed; top:0; left:0; right:0; z-index:110;
+  display:flex; align-items:center; justify-content:space-between;
+  height:56px; padding:0 1.5rem;
+  background:rgba(43,46,48,0.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.landing-nav .wordmark-svg { width:120px; height:auto; color:var(--text-light); }
+.nav-label {
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem; font-weight:400;
+  color:var(--text-muted); letter-spacing:0.22em; text-transform:uppercase;
+}
+
+/* ── HERO ── */
+.landing-hero {
+  position:relative; width:100%; min-height:100vh; min-height:100dvh;
+  display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end;
+  padding:5rem 2rem 3.5rem; overflow:hidden; background:var(--charcoal);
+}
+.hero-rule-top {
+  position:absolute; top:4.5rem; left:2rem; right:2rem; height:1px;
+  background:rgba(255,255,255,0.15);
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+}
+.hero-icon-mark {
+  position:absolute; top:5.5rem; right:2rem;
+  width:36px; height:36px; color:var(--text-light); opacity:0.25;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
+}
+.hero-edit-label {
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.62rem; font-weight:400;
+  color:var(--text-muted); letter-spacing:0.28em; text-transform:uppercase;
+  margin-bottom:1.4rem;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both;
+}
+.hero-wordmark {
+  width:min(72vw,300px); height:auto; color:var(--text-light);
+  margin-bottom:2.5rem;
+  animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.4s both;
+}
+.hero-tagline-block {
+  margin-bottom:2.8rem;
+  animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.55s both;
+}
+.hero-tagline-big {
+  font-family:"Manrope",sans-serif; font-size:clamp(2.4rem,10vw,4rem);
+  font-weight:800; line-height:1.08; letter-spacing:-0.02em;
+  color:var(--text-light); display:block;
+}
+.hero-tagline-big em {
+  font-style:normal; font-family:var(--serif); font-weight:400;
+  font-size:0.85em; color:rgba(255,255,255,0.6);
+}
+.hero-rule-mid {
+  width:60px; height:1px; background:rgba(255,255,255,0.3); margin:1.4rem 0;
+}
+.hero-sub-text {
+  font-family:"Manrope",sans-serif; font-size:clamp(0.85rem,3.5vw,1rem);
+  font-weight:400; color:var(--text-muted); line-height:1.7; max-width:280px;
+}
+.hero-sub-text .reveal-word {
+  display:inline-block; opacity:0; transform:translateY(6px);
+  animation:wordReveal 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+}
+.hero-number-accent {
+  position:absolute; right:2rem; bottom:3.5rem;
+  font-family:var(--serif); font-style:italic; font-size:0.7rem;
+  color:rgba(255,255,255,0.2); letter-spacing:0.1em;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.6s both;
+}
+.hero-scroll-hint {
+  position:absolute; bottom:1.8rem; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:0.4rem;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.8s both;
+}
+.hero-scroll-hint span {
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.58rem;
+  color:var(--text-muted); letter-spacing:0.22em; text-transform:uppercase;
+}
+.scroll-arrow { width:1px; height:24px; background:linear-gradient(to bottom,var(--text-muted),transparent); animation:scrollPulse 2s ease-in-out infinite; }
+
+/* ── COPY SECTION ── */
+.landing-copy {
+  width:100%; padding:4.5rem 2rem 3rem; background:var(--charcoal);
+  display:flex; flex-direction:column; align-items:flex-start; gap:0;
+}
+.copy-section-label {
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem;
+  color:var(--sage); letter-spacing:0.28em; text-transform:uppercase;
+  margin-bottom:2rem; font-weight:400;
+}
+.copy-line {
+  font-family:"Manrope",sans-serif; font-size:clamp(1.05rem,4.2vw,1.4rem);
+  font-weight:400; color:var(--text-muted); line-height:2.1;
+  transition:color 0.7s ease, opacity 0.7s ease;
+}
+.copy-line.revealed { color:var(--text-light); }
+.copy-rule { width:40px; height:1px; background:rgba(255,255,255,0.15); margin:1.5rem 0; }
+
+/* ── CTA ── */
+.landing-cta {
+  width:100%; padding:2.5rem 2rem calc(3rem + var(--safe-bottom));
+  background:var(--charcoal); display:flex; flex-direction:column;
+  align-items:flex-start; gap:1.2rem;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+.cta-label {
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem;
+  color:var(--sage); letter-spacing:0.28em; text-transform:uppercase; font-weight:400;
+}
+#startCameraBtn {
+  background:rgba(255,255,255,0.93); color:rgba(0,0,0,0.81);
+  border:none; padding:1rem 3rem; font-size:0.78rem;
+  font-family:"Manrope",sans-serif; font-weight:700; letter-spacing:0.22em;
+  text-transform:uppercase; cursor:pointer; transition:all 0.15s ease-in-out;
+}
+#startCameraBtn:active { opacity:0.7; transform:scale(0.97); }
+.cta-notice {
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.68rem;
+  color:var(--text-muted); line-height:1.7; max-width:260px; font-weight:400;
+}
+#permissionScreen .msg { display:none; }
+#permissionScreen .msg.error {
+  display:block; font-size:0.82rem; color:#e74c3c; line-height:1.7;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes heroFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes wordReveal { to{opacity:1;transform:translateY(0)} }
+@keyframes scrollPulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
+
+/* ── APP ── */
+#app { display:none; position:fixed; inset:0; background:#000; }
+#viewfinder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+#cameraVideo { width:100%; height:100%; object-fit:cover; }
+#cameraVideo.front { transform:scaleX(-1); }
+
+/* ── OVERLAY ── */
+#overlayLayer {
+  position:absolute; inset:0; pointer-events:none;
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:0 0 0; transition:none;
+}
+.filter-minimal #overlayLayer { color:#111; }
+.filter-minimal #overlayLayer::before { content:""; position:absolute; inset:0; background:rgba(255,255,255,0.06); pointer-events:none; }
+.filter-dark #overlayLayer { color:#f0f0f0; }
+.filter-dark #overlayLayer::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse at center,rgba(0,0,0,0.04) 30%,rgba(0,0,0,0.58) 100%); pointer-events:none; }
+.filter-orange #overlayLayer { color:#1a1a1a; }
+.filter-orange #overlayLayer::before { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(249,115,22,0.13) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0) 62%,rgba(249,115,22,0.16) 100%); pointer-events:none; }
+
+.ov-section { position:relative; z-index:1; }
+
+/* Top */
+.ov-top {
+  padding:3.2rem 1.3rem 0;
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+}
+.ov-rule { width:100%; height:1px; margin-bottom:0; }
+.filter-minimal .ov-rule { background:rgba(0,0,0,0.25); }
+.filter-dark .ov-rule { background:rgba(255,255,255,0.3); }
+.filter-orange .ov-rule { background:var(--orange); }
+
+.ov-rule-top { width:100%; height:1px; margin-bottom:0.7rem; }
+.filter-minimal .ov-rule-top { background:rgba(0,0,0,0.18); }
+.filter-dark .ov-rule-top { background:rgba(255,255,255,0.2); }
+.filter-orange .ov-rule-top { background:rgba(249,115,22,0.5); }
+
+.ov-wordmark { display:flex; justify-content:center; margin-bottom:0.55rem; }
+.ov-wordmark .wordmark-svg { width:52vw; max-width:260px; height:auto; color:currentColor; }
+.filter-orange .ov-wordmark .wordmark-svg { color:var(--orange); }
+.ov-thin-rule { width:min(55vw,240px); height:1px; margin:0 auto 0.5rem; }
+.filter-minimal .ov-thin-rule { background:rgba(0,0,0,0.22); }
+.filter-dark .ov-thin-rule { background:rgba(255,255,255,0.28); }
+.filter-orange .ov-thin-rule { background:var(--orange); opacity:0.6; }
+.ov-race-label {
+  font-family:var(--serif); font-style:italic; font-size:0.72rem;
+  letter-spacing:0.2em; opacity:0.65; margin-bottom:0;
+}
+
+/* Middle */
+.ov-middle {
+  flex:1; position:relative; padding:0.8rem 1.3rem 0;
+  display:flex; align-items:flex-start;
+}
+.ov-tagline {
+  font-family:"Manrope",sans-serif; font-size:clamp(2.2rem,9vw,3.2rem);
+  font-weight:800; line-height:1.15; letter-spacing:0.05em;
+}
+.filter-dark .ov-tagline { text-shadow:0 1px 14px rgba(0,0,0,0.55); }
+.ov-info-right {
+  position:absolute; right:1.3rem;
+  text-align:right; font-weight:700;
+}
+.ov-info-right.has-record { top:1rem; }
+.ov-info-right:not(.has-record) { bottom:20%; font-size:0.9rem; letter-spacing:0.14em; line-height:1.65; }
+.filter-dark .ov-info-right { text-shadow:0 1px 8px rgba(0,0,0,0.5); }
+.ov-finish-time { font-family:var(--sans); font-size:clamp(1.8rem,7vw,2.6rem); font-weight:900; letter-spacing:0.03em; line-height:1.1; }
+.ov-cat { font-size:0.85rem; font-weight:700; letter-spacing:0.1em; opacity:0.82; margin-top:0.15rem; }
+.ov-name { font-size:0.8rem; font-weight:600; letter-spacing:0.06em; opacity:0.72; margin-top:0.1rem; }
+.ov-date { font-family:var(--sans); font-size:0.78rem; font-weight:700; letter-spacing:0.1em; opacity:0.68; margin-top:0.5rem; font-variant-numeric:tabular-nums; }
+.ov-venue { font-size:0.74rem; font-weight:500; letter-spacing:0.05em; opacity:0.58; }
+
+/* Bottom */
+.ov-bottom { padding:0 1.3rem 0.8rem; }
+.ov-bottom-rule { height:1px; margin-bottom:0.65rem; }
+.filter-minimal .ov-bottom-rule { background:rgba(0,0,0,0.22); }
+.filter-dark .ov-bottom-rule { background:rgba(255,255,255,0.28); }
+.filter-orange .ov-bottom-rule { background:var(--orange); }
+.ov-race-name {
+  font-family:var(--serif); font-style:italic; font-size:1rem;
+  font-weight:400; letter-spacing:0.04em; margin-bottom:0.15rem;
+}
+.filter-orange .ov-race-name { color:var(--orange); }
+.ov-tagline-bottom {
+  font-family:var(--serif); font-style:italic; font-size:0.82rem;
+  font-weight:400; line-height:1.55; opacity:0.7; margin-bottom:0.55rem;
+}
+.ov-hashtags {
+  font-family:var(--sans); font-size:0.72rem; font-weight:600;
+  letter-spacing:0.1em; opacity:0.62; line-height:1.5; margin-bottom:0.65rem;
+}
+.ov-logo-row { display:flex; align-items:center; justify-content:space-between; }
+.ov-logo-left { display:flex; flex-direction:column; gap:2px; }
+.ov-logo-left .wordmark-svg { width:105px; height:auto; color:currentColor; }
+.ov-logo-sub { font-size:0.6rem; letter-spacing:0.22em; opacity:0.5; margin-top:1px; }
+.filter-orange .ov-logo-left .wordmark-svg { color:var(--orange); }
+.ov-icon-mark { width:28px; height:28px; color:currentColor; opacity:0.45; }
+.filter-orange .ov-icon-mark { color:var(--orange); }
+.ov-bottom-rule-foot { height:1px; margin-top:0.65rem; }
+.filter-minimal .ov-bottom-rule-foot { background:rgba(0,0,0,0.18); }
+.filter-dark .ov-bottom-rule-foot { background:rgba(255,255,255,0.2); }
+.filter-orange .ov-bottom-rule-foot { background:rgba(249,115,22,0.5); }
+
+/* ── CONTROLS ── */
+#controlsBar {
+  position:absolute; bottom:0; left:0; right:0; z-index:10;
+  display:flex; align-items:center; justify-content:space-around;
+  padding:1rem 1.5rem; padding-bottom:calc(1.2rem + var(--safe-bottom));
+  background:linear-gradient(to top,rgba(0,0,0,0.48) 0%,transparent 100%);
+}
+.filter-btns { display:flex; flex-direction:column; gap:0.35rem; }
+.filter-btn {
+  background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28);
+  color:#fff; padding:0.28rem 0.6rem; font-size:0.52rem;
+  font-family:var(--sans); font-weight:700; letter-spacing:0.16em;
+  cursor:pointer; transition:all 0.2s; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+.filter-btn.active { background:#fff; color:#000; border-color:#fff; }
+.filter-btn:active { transform:scale(0.94); }
+#captureBtn {
+  width:70px; height:70px; border-radius:50%;
+  border:3.5px solid rgba(255,255,255,0.9); background:transparent;
+  cursor:pointer; position:relative; transition:transform 0.15s;
+}
+#captureBtn::after {
+  content:""; position:absolute; inset:4px; border-radius:50%;
+  background:rgba(255,255,255,0.9); transition:transform 0.15s;
+}
+#captureBtn:active { transform:scale(0.88); }
+#captureBtn:active::after { transform:scale(0.84); }
+.right-controls { display:flex; flex-direction:column; gap:0.5rem; align-items:center; }
+#flipBtn,#recordBtn {
+  width:44px; height:44px; border-radius:50%; border:none;
+  background:rgba(255,255,255,0.14); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  color:#fff; font-size:1.15rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:transform 0.3s;
+}
+#flipBtn:active { transform:rotate(180deg); }
+#recordBtn.has-data { background:var(--orange); color:#000; }
+
+/* ── RECORD PANEL ── */
+#recordPanel {
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:40;
+  background:rgba(8,8,8,0.94); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  border-top:1px solid rgba(255,255,255,0.09);
+  padding:1.5rem 1.5rem calc(1.5rem + var(--safe-bottom));
+  border-radius:18px 18px 0 0; max-height:78vh; overflow-y:auto;
+  transform:translateY(100%); transition:transform 0.32s ease;
+}
+#recordPanel.open { display:block; transform:translateY(0); }
+#recordPanel .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
+#recordPanel .panel-title { color:#fff; font-size:0.82rem; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; }
+#recordPanel .panel-close { background:none; border:none; color:#666; font-size:1.5rem; cursor:pointer; }
+.record-field { margin-bottom:0.9rem; }
+.record-field label { display:block; color:#666; font-size:0.64rem; font-weight:600; letter-spacing:0.14em; margin-bottom:0.35rem; text-transform:uppercase; }
+.record-field input,.record-field select {
+  width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.13);
+  color:#fff; padding:0.6rem 0.75rem; font-size:0.92rem; font-family:var(--sans);
+  border-radius:6px; outline:none; transition:border-color 0.2s;
+}
+.record-field input:focus,.record-field select:focus { border-color:var(--orange); }
+.record-field select { -webkit-appearance:none; appearance:none; }
+.record-field select option { background:#111; color:#fff; }
+.time-inputs { display:flex; align-items:center; gap:0.3rem; }
+.time-inputs input { width:68px; text-align:center; font-size:1.7rem; font-weight:900; padding:0.45rem 0.25rem; letter-spacing:0.04em; }
+.time-inputs .sep { color:#555; font-size:1.7rem; font-weight:900; }
+.record-actions { display:flex; gap:0.5rem; margin-top:1.1rem; }
+.record-actions button {
+  flex:1; padding:0.72rem; font-size:0.8rem; font-weight:700; letter-spacing:0.14em;
+  border:none; border-radius:6px; cursor:pointer; font-family:var(--sans);
+}
+#recordApplyBtn { background:var(--orange); color:#000; }
+#recordClearBtn { background:rgba(255,255,255,0.09); color:#888; }
+
+/* ── REVIEW ── */
+#reviewScreen {
+  display:none; position:fixed; inset:0; z-index:50; background:#080808;
+  flex-direction:column; align-items:center; justify-content:center; gap:0;
+}
+#reviewImage { max-width:90%; max-height:70vh; object-fit:contain; box-shadow:0 10px 50px rgba(0,0,0,0.7); }
+.review-actions {
+  display:flex; gap:0.75rem; margin-top:1.4rem;
+  padding-bottom:calc(0.5rem + var(--safe-bottom));
+  flex-wrap:wrap; justify-content:center;
+}
+.review-btn {
+  border:none; padding:0.85rem 1.8rem; font-size:0.78rem; font-weight:700;
+  letter-spacing:0.2em; cursor:pointer; transition:opacity 0.2s; font-family:var(--sans);
+}
+.review-btn:active { opacity:0.65; }
+.review-btn.share-save { background:#fff; color:#000; }
+.review-btn.download-btn {
+  background:transparent; color:rgba(255,255,255,0.65);
+  border:1px solid rgba(255,255,255,0.25); padding:0.85rem 1.3rem;
+}
+.review-btn.retake { background:transparent; color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.2); }
+
+/* ── MISC ── */
+.flash { position:fixed; inset:0; background:#fff; z-index:60; animation:flashAnim 0.32s ease-out forwards; pointer-events:none; }
+@keyframes flashAnim { 0%{opacity:0.85} 100%{opacity:0} }
+#exportCanvas { display:none; }
+.loading { display:inline-block; width:22px; height:22px; border:2.5px solid rgba(0,0,0,0.15); border-top-color:rgba(0,0,0,0.7); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+@keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     LANDING / PERMISSION SCREEN
+════════════════════════════════════════ -->
+<div id="permissionScreen">
+
+  <nav class="landing-nav">
+    <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
+    <span class="nav-label">Race Day Filter</span>
+  </nav>
+
+  <!-- HERO -->
+  <section class="landing-hero">
+    <div class="hero-rule-top"></div>
+    <svg class="hero-icon-mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="currentColor"/>
+      <path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="currentColor"/>
+      <path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="currentColor"/>
+    </svg>
+    <p class="hero-edit-label">No. 01 &nbsp;·&nbsp; Race Day Edition</p>
+    <svg class="hero-wordmark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
+    <div class="hero-tagline-block">
+      <span class="hero-tagline-big">RUN YOUR<br><em>CITY.</em></span>
+      <div class="hero-rule-mid"></div>
+      <p class="hero-sub-text" id="heroTagline"></p>
+    </div>
+    <p class="hero-number-accent">DARIMATI.US&nbsp;&nbsp;·&nbsp;&nbsp;2026</p>
+    <div class="hero-scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- COPY -->
+  <section class="landing-copy" id="landingCopy">
+    <span class="copy-section-label">The Story</span>
+    <p class="copy-line" data-reveal>도시에서 달리는 건,</p>
+    <p class="copy-line" data-reveal>트랙 위의 러닝과는 다릅니다.</p>
+    <div class="copy-rule"></div>
+    <p class="copy-line" data-reveal>당신의 레이스를</p>
+    <p class="copy-line" data-reveal>기록하세요.</p>
+    <div class="copy-rule"></div>
+    <p class="copy-line" data-reveal>순간을 담는 카메라 필터.</p>
+  </section>
+
+  <!-- CTA -->
+  <section class="landing-cta">
+    <span class="cta-label">Camera</span>
+    <button id="startCameraBtn">START CAMERA</button>
+    <p class="msg" id="permMsg"></p>
+    <p class="cta-notice">카메라 접근 권한이 필요합니다.<br>촬영한 사진은 기기에만 저장됩니다.</p>
+  </section>
+
+</div>
+
+<!-- ═══════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div id="app">
+  <div id="viewfinder">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+  </div>
+
+  <!-- EDITORIAL OVERLAY -->
+  <div id="overlayLayer">
+
+    <!-- TOP: rule + wordmark + rule + race label -->
+    <div class="ov-section ov-top">
+      <div class="ov-rule-top"></div>
+      <div class="ov-wordmark">
+        <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
+      </div>
+      <div class="ov-thin-rule"></div>
+      <p class="ov-race-label" id="ovRaceLabel">RACE DAY &nbsp;·&nbsp; 2026</p>
+    </div>
+
+    <!-- MIDDLE: tagline + info right -->
+    <div class="ov-section ov-middle">
+      <div class="ov-tagline">RUN.<br>YOUR.<br>CITY.</div>
+      <div class="ov-info-right" id="ovInfoRight">
+        <span id="ovDateDisplay"></span><br>SEOUL
+      </div>
+    </div>
+
+    <!-- BOTTOM: editorial content + logos -->
+    <div class="ov-section ov-bottom">
+      <div class="ov-bottom-rule"></div>
+      <div class="ov-race-name" id="ovRaceName" style="display:none"></div>
+      <p class="ov-tagline-bottom">The bridge between<br>you and the road.</p>
+      <p class="ov-hashtags">#DARIMATI &nbsp; #REXTREME &nbsp; #렉스트림 &nbsp; #다리마티</p>
+      <div class="ov-logo-row">
+        <div class="ov-logo-left">
+          <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
+          <span class="ov-logo-sub">다리마티</span>
+        </div>
+        <svg class="ov-icon-mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="currentColor"/>
+          <path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="currentColor"/>
+          <path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="ov-bottom-rule-foot"></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="controlsBar">
+    <div class="filter-btns">
+      <button class="filter-btn active" data-filter="minimal">MINIMAL</button>
+      <button class="filter-btn" data-filter="dark">DARK</button>
+      <button class="filter-btn" data-filter="orange">ORANGE</button>
+    </div>
+    <button id="captureBtn" aria-label="Capture"></button>
+    <div class="right-controls">
+      <button id="flipBtn" aria-label="Flip Camera">⟳</button>
+      <button id="recordBtn" aria-label="Record">⏱</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     RECORD PANEL
+════════════════════════════════════════ -->
+<div id="recordPanel">
+  <div class="panel-header">
+    <span class="panel-title">⏱ 기록 입력</span>
+    <button class="panel-close" id="recordCloseBtn">&times;</button>
+  </div>
+  <div class="record-field">
+    <label>Finish Time</label>
+    <div class="time-inputs">
+      <input type="number" id="timeH" min="0" max="23" placeholder="H">
+      <span class="sep">:</span>
+      <input type="number" id="timeM" min="0" max="59" placeholder="MM">
+      <span class="sep">:</span>
+      <input type="number" id="timeS" min="0" max="59" placeholder="SS">
+    </div>
+  </div>
+  <div class="record-field">
+    <label>종목</label>
+    <select id="recordCategory">
+      <option value="개인전">개인전</option>
+      <option value="3인팀전">3인팀전</option>
+      <option value="혼성릴레이">혼성릴레이</option>
+    </select>
+  </div>
+  <div class="record-field">
+    <label>이름</label>
+    <input type="text" id="recordName" placeholder="참가자 이름">
+  </div>
+  <div class="record-field">
+    <label>대회명</label>
+    <input type="text" id="recordRace" value="REXTREME 2026">
+  </div>
+  <div class="record-field">
+    <label>장소</label>
+    <input type="text" id="recordVenue" value="수원컨벤션센터">
+  </div>
+  <div class="record-actions">
+    <button id="recordClearBtn">초기화</button>
+    <button id="recordApplyBtn">확인</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     REVIEW SCREEN
+════════════════════════════════════════ -->
+<div id="reviewScreen">
+  <img id="reviewImage" alt="Captured">
+  <div class="review-actions">
+    <button class="review-btn retake" id="retakeBtn">RETAKE</button>
+    <button class="review-btn download-btn" id="downloadBtn">↓ SAVE</button>
+    <button class="review-btn share-save" id="shareBtn">SHARE ↑</button>
+  </div>
+</div>
+
+<canvas id="exportCanvas" width="1080" height="1920"></canvas>
+
+<script>
+(function() {
+'use strict';
+
+// ── SVG TEMPLATES ──
+var WM_PATH = 'M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z';
+var ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="__C__"/><path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="__C__"/><path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="__C__"/></svg>';
+var WM_SVG  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 226 33"><path fill="__C__" d="' + WM_PATH + '"/></svg>';
+
+function svgToImg(template, color) {
+  return new Promise(function(resolve) {
+    var s = template.replace(/__C__/g, encodeURIComponent(color));
+    // use data URI to avoid CORS issues on iOS
+    var s2 = template.replace(/__C__/g, color);
+    var b64 = btoa(unescape(encodeURIComponent(s2)));
+    var img = new Image();
+    img.onload = function() { resolve(img); };
+    img.onerror = function() { resolve(null); };
+    img.src = 'data:image/svg+xml;base64,' + b64;
+  });
+}
+
+// ── DOM REFS ──
+var permScreen   = document.getElementById('permissionScreen');
+var permMsg      = document.getElementById('permMsg');
+var startBtn     = document.getElementById('startCameraBtn');
+var app          = document.getElementById('app');
+var video        = document.getElementById('cameraVideo');
+var captureBtn   = document.getElementById('captureBtn');
+var flipBtn      = document.getElementById('flipBtn');
+var recordBtn    = document.getElementById('recordBtn');
+var recordPanel  = document.getElementById('recordPanel');
+var recordCloseBtn  = document.getElementById('recordCloseBtn');
+var recordApplyBtn  = document.getElementById('recordApplyBtn');
+var recordClearBtn  = document.getElementById('recordClearBtn');
+var reviewScreen = document.getElementById('reviewScreen');
+var reviewImage  = document.getElementById('reviewImage');
+var retakeBtn    = document.getElementById('retakeBtn');
+var shareBtn     = document.getElementById('shareBtn');
+var downloadBtn  = document.getElementById('downloadBtn');
+var canvas       = document.getElementById('exportCanvas');
+var ctx          = canvas.getContext('2d');
+var ovDateDisp   = document.getElementById('ovDateDisplay');
+var ovInfoRight  = document.getElementById('ovInfoRight');
+var ovRaceName   = document.getElementById('ovRaceName');
+var ovRaceLabel  = document.getElementById('ovRaceLabel');
+var filterBtns   = document.querySelectorAll('.filter-btn');
+var timeH = document.getElementById('timeH');
+var timeM = document.getElementById('timeM');
+var timeS = document.getElementById('timeS');
+var recCat   = document.getElementById('recordCategory');
+var recName  = document.getElementById('recordName');
+var recRace  = document.getElementById('recordRace');
+var recVenue = document.getElementById('recordVenue');
+
+// ── STATE ──
+var stream       = null;
+var facingMode   = 'environment';
+var isFront      = false;
+var filter       = 'minimal';
+var record       = null;
+var capturedBlob = null;
+
+var SANS   = '"Geist Sans","Geist",-apple-system,BlinkMacSystemFont,sans-serif';
+var SERIF  = '"DM Serif Display",Georgia,serif';
+var MANROPE = '"Manrope",' + SANS;
+
+// ── DATE ──
+var today  = new Date();
+var YEAR   = today.getFullYear();
+var dateStr = YEAR + '.' + String(today.getMonth()+1).padStart(2,'0') + '.' + String(today.getDate()).padStart(2,'0');
+if (ovDateDisp) ovDateDisp.textContent = dateStr;
+if (ovRaceLabel) ovRaceLabel.textContent = 'RACE DAY \u00b7 ' + YEAR;
+
+// ── LANDING ANIMATIONS ──
+(function initLanding() {
+  var taglineWords = ['당신의', '레이스를,', '당신의', '도시에서.'];
+  var el = document.getElementById('heroTagline');
+  if (el) {
+    el.innerHTML = taglineWords.map(function(w, i) {
+      return '<span class="reveal-word" style="animation-delay:' + (1.1 + i * 0.13) + 's">' + w + '</span>';
+    }).join(' ');
+  }
+
+  var copyLines = document.querySelectorAll('.copy-line[data-reveal]');
+  if (copyLines.length && permScreen) {
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('revealed'); });
+    }, { root: permScreen, threshold: 0.55 });
+    copyLines.forEach(function(l) { obs.observe(l); });
+  }
+})();
+
+// ── FILTER TOGGLE ──
+app.classList.add('filter-minimal');
+filterBtns.forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    filterBtns.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    filter = btn.dataset.filter;
+    app.className = 'filter-' + filter;
+    app.style.display = 'block';
+  });
+});
+
+// ── TIME INPUT AUTO-TAB ──
+[timeH, timeM, timeS].forEach(function(inp, i, arr) {
+  inp.addEventListener('input', function() {
+    if (inp.value.length >= 2 && i < arr.length - 1) arr[i+1].focus();
+    var max = i === 0 ? 23 : 59;
+    if (parseInt(inp.value) > max) inp.value = max;
+  });
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && inp.value === '' && i > 0) arr[i-1].focus();
+  });
+});
+
+// ── RECORD PANEL ──
+recordBtn.addEventListener('click', function() {
+  recordPanel.style.display = 'block';
+  setTimeout(function() { recordPanel.classList.add('open'); }, 10);
+});
+recordCloseBtn.addEventListener('click', closePanel);
+function closePanel() {
+  recordPanel.classList.remove('open');
+  setTimeout(function() { recordPanel.style.display = 'none'; }, 340);
+}
+
+recordApplyBtn.addEventListener('click', function() {
+  var h = timeH.value, m = timeM.value, s = timeS.value;
+  var hasTime = h !== '' || m !== '' || s !== '';
+  record = {
+    time: hasTime
+      ? (parseInt(h)||0) + ':' + String(parseInt(m)||0).padStart(2,'0') + ':' + String(parseInt(s)||0).padStart(2,'0')
+      : null,
+    category: recCat.value,
+    name: recName.value || '',
+    race: recRace.value || 'REXTREME 2026',
+    venue: recVenue.value || '수원컨벤션센터'
+  };
+  updateOverlay();
+  recordBtn.classList.add('has-data');
+  closePanel();
+});
+
+recordClearBtn.addEventListener('click', function() {
+  record = null;
+  timeH.value = ''; timeM.value = ''; timeS.value = '';
+  recName.value = ''; recRace.value = 'REXTREME 2026'; recVenue.value = '수원컨벤션센터';
+  recCat.selectedIndex = 0;
+  updateOverlay();
+  recordBtn.classList.remove('has-data');
+  closePanel();
+});
+
+function updateOverlay() {
+  if (record && record.time) {
+    ovInfoRight.classList.add('has-record');
+    ovInfoRight.innerHTML =
+      '<div class="ov-finish-time">' + record.time + '</div>' +
+      '<div class="ov-cat">' + record.category + '</div>' +
+      (record.name ? '<div class="ov-name">' + record.name + '</div>' : '') +
+      '<div class="ov-date">' + dateStr + '</div>' +
+      '<div class="ov-venue">' + record.venue + '</div>';
+    ovRaceName.textContent = record.race;
+    ovRaceName.style.display = 'block';
+  } else if (record) {
+    ovInfoRight.classList.remove('has-record');
+    ovInfoRight.innerHTML = '<div class="ov-date">' + dateStr + '</div><div class="ov-venue">' + record.venue + '</div>';
+    ovRaceName.textContent = record.race;
+    ovRaceName.style.display = 'block';
+  } else {
+    ovInfoRight.classList.remove('has-record');
+    ovInfoRight.innerHTML = '<span id="ovDateDisplay">' + dateStr + '</span><br>SEOUL';
+    ovRaceName.style.display = 'none';
+  }
+}
+
+// ── CAMERA ──
+startBtn.addEventListener('click', initCamera);
+
+async function initCamera() {
+  startBtn.innerHTML = '<span class="loading"></span>';
+  try {
+    var s = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facingMode, width:{ideal:1920}, height:{ideal:1920} }, audio: false
+    });
+    stream = s; video.srcObject = s;
+    isFront = facingMode === 'user';
+    video.classList.toggle('front', isFront);
+    await video.play();
+    permScreen.style.display = 'none';
+    app.style.display = 'block';
+  } catch(err) {
+    console.error(err);
+    permMsg.textContent = '카메라 접근이 거부되었습니다. 설정에서 카메라 권한을 허용해 주세요.';
+    permMsg.classList.add('error');
+    startBtn.textContent = 'RETRY';
+  }
+}
+
+flipBtn.addEventListener('click', async function() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  if (stream) stream.getTracks().forEach(function(t){t.stop();});
+  try {
+    var s = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facingMode, width:{ideal:1920}, height:{ideal:1920} }, audio: false
+    });
+    stream = s; video.srcObject = s;
+    isFront = facingMode === 'user';
+    video.classList.toggle('front', isFront);
+    await video.play();
+  } catch(err) { console.error('Flip failed', err); }
+});
+
+// ── CAPTURE ──
+captureBtn.addEventListener('click', async function() {
+  var flash = document.createElement('div');
+  flash.className = 'flash';
+  document.body.appendChild(flash);
+  setTimeout(function(){flash.remove();}, 380);
+  await renderCanvas();
+  capturedBlob = await new Promise(function(res) { canvas.toBlob(res, 'image/jpeg', 0.92); });
+  reviewImage.src = URL.createObjectURL(capturedBlob);
+  reviewScreen.style.display = 'flex';
+});
+
+// ── SHARE / DOWNLOAD ──
+shareBtn.addEventListener('click', async function() {
+  if (!capturedBlob) return;
+  var fname = 'DARIMATI_' + dateStr.replace(/\./g,'') + '.jpg';
+  var file = new File([capturedBlob], fname, { type: 'image/jpeg' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        title: 'DARIMATI Race Day',
+        text: '#DARIMATI #REXTREME #다리마티 #렉스트림',
+        files: [file]
+      });
+      return;
+    } catch(err) {
+      if (err.name === 'AbortError') return;
+      // fall through to download
+    }
+  }
+  triggerDownload(fname);
+});
+
+downloadBtn.addEventListener('click', function() {
+  var fname = 'DARIMATI_' + dateStr.replace(/\./g,'') + '.jpg';
+  triggerDownload(fname);
+});
+
+function triggerDownload(fname) {
+  if (!capturedBlob) return;
+  var url = URL.createObjectURL(capturedBlob);
+  var a = document.createElement('a');
+  a.href = url; a.download = fname; a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);}, 2000);
+}
+
+retakeBtn.addEventListener('click', function() {
+  reviewScreen.style.display = 'none';
+  if (capturedBlob) { URL.revokeObjectURL(reviewImage.src); capturedBlob = null; }
+});
+
+// ── CANVAS RENDER ──
+async function loadSerifFont() {
+  if (document.fonts && document.fonts.check('12px "DM Serif Display"')) return;
+  try {
+    var f = new FontFace('DM Serif Display',
+      'url(https://fonts.gstatic.com/s/dmserifdisp/v15/u-445m0j-o-oXZFokMVkFtHY4paa.woff2) format("woff2")', {style:'normal',weight:'400'});
+    var fi = new FontFace('DM Serif Display',
+      'url(https://fonts.gstatic.com/s/dmserifdisp/v15/u-445m0j-o-oXZFokMVkFtHY4paa.woff2) format("woff2")', {style:'italic',weight:'400'});
+    await Promise.all([f.load(), fi.load()]);
+    document.fonts.add(f); document.fonts.add(fi);
+    await document.fonts.ready;
+  } catch(e) { console.warn('DM Serif font load failed', e); }
+}
+
+async function renderCanvas() {
+  await loadSerifFont();
+  var W = 1080, H = 1920;
+  canvas.width = W; canvas.height = H;
+
+  // Draw video frame
+  var vw = video.videoWidth || W, vh = video.videoHeight || H;
+  var va = vw/vh, ca = W/H;
+  var sx,sy,sw,sh;
+  if (va > ca) { sh=vh; sw=vh*ca; sx=(vw-sw)/2; sy=0; }
+  else { sw=vw; sh=vw/ca; sx=0; sy=(vh-sh)/2; }
+  ctx.save();
+  if (isFront) { ctx.translate(W,0); ctx.scale(-1,1); }
+  ctx.drawImage(video, sx,sy,sw,sh, 0,0,W,H);
+  ctx.restore();
+
+  // Filter overlay
+  if (filter === 'minimal') {
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0,0,W,H);
+  } else if (filter === 'dark') {
+    var g1 = ctx.createRadialGradient(W/2,H/2,H*0.15,W/2,H/2,H*0.72);
+    g1.addColorStop(0,'rgba(0,0,0,0.03)'); g1.addColorStop(1,'rgba(0,0,0,0.58)');
+    ctx.fillStyle = g1; ctx.fillRect(0,0,W,H);
+  } else {
+    var g2 = ctx.createLinearGradient(0,0,0,H);
+    g2.addColorStop(0,'rgba(249,115,22,0.13)'); g2.addColorStop(0.36,'rgba(0,0,0,0)');
+    g2.addColorStop(0.64,'rgba(0,0,0,0)'); g2.addColorStop(1,'rgba(249,115,22,0.16)');
+    ctx.fillStyle = g2; ctx.fillRect(0,0,W,H);
+  }
+
+  // Color palette per filter
+  var tc, lc, ac; // text, line, accent
+  if (filter === 'minimal') { tc='#111111'; lc='rgba(0,0,0,0.22)'; ac='#111111'; }
+  else if (filter === 'dark') { tc='#f0f0f0'; lc='rgba(255,255,255,0.3)'; ac='#f0f0f0'; }
+  else { tc='#1a1a1a'; lc='#F97316'; ac='#F97316'; }
+  var brandC = filter === 'orange' ? '#F97316' : tc;
+
+  // ── Padding ──
+  var px = 72, py = 0;
+
+  // ── TOP RULE ──
+  py = 110;
+  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : (filter === 'orange' ? 'rgba(249,115,22,0.45)' : 'rgba(0,0,0,0.18)');
+  ctx.lineWidth = 1.5;
+  hline(px, py, W-px);
+
+  // ── WORDMARK ──
+  py = 160;
+  var wmImg = await svgToImg(WM_SVG, brandC);
+  if (wmImg) {
+    var wmW = 580, wmH = wmW*(33/226);
+    ctx.drawImage(wmImg, (W-wmW)/2, py, wmW, wmH);
+    py += wmH;
+  }
+
+  // ── THIN RULE BELOW WORDMARK ──
+  py += 28;
+  ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
+  hline((W-500)/2, py, (W+500)/2);
+  py += 22;
+
+  // ── RACE DAY LABEL (serif italic) ──
+  ctx.fillStyle = tc; ctx.globalAlpha = 0.62;
+  ctx.font = 'italic 400 36px ' + SERIF;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('RACE DAY \u00b7 ' + YEAR, W/2, py);
+  ctx.globalAlpha = 1;
+  py += 60;
+
+  // ── TAGLINE: RUN. YOUR. CITY. ──
+  var tagY = py + 10;
+  if (filter === 'dark') { ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=18; }
+  ctx.fillStyle = tc; ctx.font = '800 118px ' + MANROPE;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('RUN.', px, tagY);
+  ctx.fillText('YOUR.', px, tagY + 140);
+  ctx.fillText('CITY.', px, tagY + 280);
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+
+  // ── RIGHT INFO ──
+  ctx.textAlign = 'right';
+  if (filter === 'dark') { ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=12; }
+
+  if (record && record.time) {
+    // Finish time
+    ctx.fillStyle = tc; ctx.font = '900 84px ' + SANS;
+    ctx.fillText(record.time, W-px, tagY + 18);
+    // Category (serif)
+    ctx.font = 'italic 400 44px ' + SERIF;
+    ctx.fillText(record.category, W-px, tagY + 118);
+    // Name
+    if (record.name) {
+      ctx.font = '600 38px ' + MANROPE; ctx.globalAlpha = 0.78;
+      ctx.fillText(record.name, W-px, tagY + 185);
+      ctx.globalAlpha = 1;
+    }
+    // Date + venue lower right
+    var infoY = tagY + 380;
+    ctx.font = '700 46px ' + SANS; ctx.globalAlpha = 0.72;
+    ctx.fillText(dateStr, W-px, infoY);
+    ctx.font = '500 36px ' + MANROPE; ctx.globalAlpha = 0.56;
+    ctx.fillText(record.venue, W-px, infoY+62);
+    ctx.globalAlpha = 1;
+  } else {
+    var infoY2 = tagY + 370;
+    ctx.fillStyle = tc; ctx.font = '700 52px ' + SANS; ctx.globalAlpha = 0.72;
+    ctx.fillText(dateStr, W-px, infoY2);
+    var venueTxt = record ? record.venue : 'SEOUL';
+    ctx.font = '500 40px ' + MANROPE; ctx.globalAlpha = 0.55;
+    ctx.fillText(venueTxt, W-px, infoY2+66);
+    ctx.globalAlpha = 1;
+  }
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+
+  // ── BOTTOM SECTION ──
+  var botBase = H - 480;
+
+  // Thin rule
+  ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
+  hline(px, botBase, px + 340);
+  botBase += 38;
+
+  // Race name (serif italic)
+  if (record && record.race) {
+    ctx.fillStyle = filter === 'orange' ? '#F97316' : tc;
+    ctx.font = 'italic 400 54px ' + SERIF;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(record.race, px, botBase);
+    botBase += 72;
+  }
+
+  // Editorial tagline (serif italic)
+  ctx.fillStyle = tc; ctx.globalAlpha = 0.72;
+  ctx.font = 'italic 400 46px ' + SERIF;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('The bridge between', px, botBase);
+  ctx.fillText('you and the road.', px, botBase+60);
+  ctx.globalAlpha = 1;
+  botBase += 138;
+
+  // Hashtags
+  ctx.fillStyle = tc; ctx.globalAlpha = 0.58;
+  ctx.font = '600 32px ' + SANS; ctx.textAlign = 'left';
+  ctx.fillText('#DARIMATI  #REXTREME  #렉스트림  #다리마티', px, botBase);
+  ctx.globalAlpha = 1;
+  botBase += 54;
+
+  // Logo row
+  var logoY = H - 110;
+  var logoColor = filter === 'orange' ? '#F97316' : tc;
+  var logoWm = await svgToImg(WM_SVG, logoColor);
+  if (logoWm) {
+    var lW = 260, lH = lW*(33/226);
+    ctx.drawImage(logoWm, px, logoY - lH, lW, lH);
+  }
+  // Sub label
+  ctx.fillStyle = logoColor; ctx.globalAlpha = 0.5;
+  ctx.font = '400 28px ' + SANS; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('다리마티', px, logoY + 4);
+  ctx.globalAlpha = 1;
+
+  // Icon mark (right)
+  var iconImg = await svgToImg(ICON_SVG, logoColor);
+  if (iconImg) { ctx.globalAlpha=0.42; ctx.drawImage(iconImg, W-px-64, logoY-50, 64, 64); ctx.globalAlpha=1; }
+
+  // Bottom rule
+  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : (filter === 'orange' ? 'rgba(249,115,22,0.45)' : 'rgba(0,0,0,0.18)');
+  ctx.lineWidth = 1.5;
+  hline(px, H-38, W-px);
+}
+
+function hline(x1, y, x2) {
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+}
+
+})();
+</script>
+</body>
+</html>
