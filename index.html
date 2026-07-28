@@ -122,8 +122,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 .filter-minimal #overlayLayer::before { content:""; position:absolute; inset:0; background:rgba(255,255,255,0.06); pointer-events:none; }
 .filter-dark #overlayLayer { color:#f0f0f0; }
 .filter-dark #overlayLayer::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse at center,rgba(0,0,0,0.04) 30%,rgba(0,0,0,0.58) 100%); pointer-events:none; }
-.filter-orange #overlayLayer { color:#1a1a1a; }
-.filter-orange #overlayLayer::before { content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(249,115,22,0.13) 0%,rgba(0,0,0,0) 38%,rgba(0,0,0,0) 62%,rgba(249,115,22,0.16) 100%); pointer-events:none; }
+
 
 .ov-section { position:relative; z-index:1; }
 
@@ -135,20 +134,24 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 .ov-rule { width:100%; height:1px; margin-bottom:0; }
 .filter-minimal .ov-rule { background:rgba(0,0,0,0.25); }
 .filter-dark .ov-rule { background:rgba(255,255,255,0.3); }
-.filter-orange .ov-rule { background:var(--orange); }
+
 
 .ov-rule-top { width:100%; height:1px; margin-bottom:0.7rem; }
 .filter-minimal .ov-rule-top { background:rgba(0,0,0,0.18); }
 .filter-dark .ov-rule-top { background:rgba(255,255,255,0.2); }
-.filter-orange .ov-rule-top { background:rgba(249,115,22,0.5); }
+
 
 .ov-wordmark { display:flex; justify-content:center; margin-bottom:0.55rem; }
 .ov-wordmark .wordmark-svg { width:58vw; max-width:290px; height:auto; color:currentColor; }
-.filter-orange .ov-wordmark .wordmark-svg { color:var(--orange); }
+
 .ov-thin-rule { width:min(55vw,240px); height:1px; margin:0 auto 0.5rem; }
 .filter-minimal .ov-thin-rule { background:rgba(0,0,0,0.22); }
 .filter-dark .ov-thin-rule { background:rgba(255,255,255,0.28); }
-.filter-orange .ov-thin-rule { background:var(--orange); opacity:0.6; }
+
+.ov-rextreme-label {
+  font-family:var(--display); font-size:0.85rem; font-weight:700;
+  letter-spacing:0.32em; text-transform:uppercase; opacity:0.72; margin-bottom:0.45rem;
+}
 .ov-race-label {
   font-family:var(--serif); font-style:italic; font-size:0.72rem;
   letter-spacing:0.2em; opacity:0.65; margin-bottom:0;
@@ -182,12 +185,12 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 .ov-bottom-rule { height:1px; margin-bottom:0.65rem; }
 .filter-minimal .ov-bottom-rule { background:rgba(0,0,0,0.22); }
 .filter-dark .ov-bottom-rule { background:rgba(255,255,255,0.28); }
-.filter-orange .ov-bottom-rule { background:var(--orange); }
+
 .ov-race-name {
   font-family:var(--serif); font-style:italic; font-size:1rem;
   font-weight:400; letter-spacing:0.04em; margin-bottom:0.15rem;
 }
-.filter-orange .ov-race-name { color:var(--orange); }
+
 .ov-tagline-bottom {
   font-family:var(--serif); font-style:italic; font-size:0.82rem;
   font-weight:400; line-height:1.55; opacity:0.7; margin-bottom:0.55rem;
@@ -200,13 +203,28 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 .ov-logo-left { display:flex; flex-direction:column; gap:2px; }
 .ov-logo-left .wordmark-svg { width:120px; height:auto; color:currentColor; }
 .ov-logo-sub { font-size:0.6rem; letter-spacing:0.22em; opacity:0.7; margin-top:1px; }
-.filter-orange .ov-logo-left .wordmark-svg { color:var(--orange); }
+
 .ov-icon-mark { width:32px; height:32px; color:currentColor; opacity:0.75; }
-.filter-orange .ov-icon-mark { color:var(--orange); }
+
 .ov-bottom-rule-foot { height:1px; margin-top:0.65rem; }
 .filter-minimal .ov-bottom-rule-foot { background:rgba(0,0,0,0.18); }
 .filter-dark .ov-bottom-rule-foot { background:rgba(255,255,255,0.2); }
-.filter-orange .ov-bottom-rule-foot { background:rgba(249,115,22,0.5); }
+
+
+/* ── FILTER TOGGLE (top-right) ── */
+.filter-btns {
+  position:absolute; top:calc(3.4rem + env(safe-area-inset-top,0px)); right:1rem; z-index:12;
+  display:flex; flex-direction:column; gap:0.35rem;
+}
+.filter-btn {
+  background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28);
+  color:#fff; padding:0.28rem 0.6rem; font-size:0.52rem;
+  font-family:var(--sans); font-weight:700; letter-spacing:0.16em;
+  cursor:pointer; transition:all 0.2s; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  pointer-events:auto;
+}
+.filter-btn.active { background:#fff; color:#000; border-color:#fff; }
+.filter-btn:active { transform:scale(0.94); }
 
 /* ── CONTROLS ── */
 #controlsBar {
@@ -215,15 +233,6 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   padding:1rem 1.5rem; padding-bottom:calc(1.2rem + var(--safe-bottom));
   background:linear-gradient(to top,rgba(0,0,0,0.48) 0%,transparent 100%);
 }
-.filter-btns { display:flex; flex-direction:column; gap:0.35rem; }
-.filter-btn {
-  background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28);
-  color:#fff; padding:0.28rem 0.6rem; font-size:0.52rem;
-  font-family:var(--sans); font-weight:700; letter-spacing:0.16em;
-  cursor:pointer; transition:all 0.2s; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
-}
-.filter-btn.active { background:#fff; color:#000; border-color:#fff; }
-.filter-btn:active { transform:scale(0.94); }
 #captureBtn {
   width:70px; height:70px; border-radius:50%;
   border:3.5px solid rgba(255,255,255,0.9); background:transparent;
@@ -235,7 +244,6 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 }
 #captureBtn:active { transform:scale(0.88); }
 #captureBtn:active::after { transform:scale(0.84); }
-.right-controls { display:flex; flex-direction:column; gap:0.5rem; align-items:center; }
 #flipBtn,#recordBtn {
   width:44px; height:44px; border-radius:50%; border:none;
   background:rgba(255,255,255,0.14); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
@@ -243,7 +251,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   display:flex; align-items:center; justify-content:center; transition:transform 0.3s;
 }
 #flipBtn:active { transform:rotate(180deg); }
-#recordBtn.has-data { background:var(--orange); color:#000; }
+#recordBtn.has-data { background:#fff; color:#000; }
 
 /* ── RECORD PANEL ── */
 #recordPanel {
@@ -265,7 +273,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   color:#fff; padding:0.6rem 0.75rem; font-size:0.92rem; font-family:var(--sans);
   border-radius:6px; outline:none; transition:border-color 0.2s;
 }
-.record-field input:focus,.record-field select:focus { border-color:var(--orange); }
+.record-field input:focus,.record-field select:focus { border-color:rgba(255,255,255,0.5); }
 .record-field select { -webkit-appearance:none; appearance:none; }
 .record-field select option { background:#111; color:#fff; }
 .time-inputs { display:flex; align-items:center; gap:0.3rem; }
@@ -276,7 +284,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   flex:1; padding:0.72rem; font-size:0.8rem; font-weight:700; letter-spacing:0.14em;
   border:none; border-radius:6px; cursor:pointer; font-family:var(--sans);
 }
-#recordApplyBtn { background:var(--orange); color:#000; }
+#recordApplyBtn { background:#fff; color:#000; }
 #recordClearBtn { background:rgba(255,255,255,0.09); color:#888; }
 
 /* ── REVIEW ── */
@@ -360,8 +368,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
       <div class="ov-wordmark">
         <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
       </div>
+      <p class="ov-rextreme-label">REXTREME</p>
       <div class="ov-thin-rule"></div>
-      <p class="ov-race-label" id="ovRaceLabel">REXTREME 2026 &nbsp;·&nbsp; 2026.08.01</p>
+      <p class="ov-race-label" id="ovRaceLabel">2026. 08. 01 &nbsp;·&nbsp; 수원컨벤션센터</p>
     </div>
 
     <!-- MIDDLE: tagline + info right -->
@@ -393,18 +402,17 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
     </div>
   </div>
 
+  <!-- FILTER TOGGLE (top-right) -->
+  <div class="filter-btns" id="filterBtnsBar">
+    <button class="filter-btn active" data-filter="minimal">MINIMAL</button>
+    <button class="filter-btn" data-filter="dark">DARK</button>
+  </div>
+
   <!-- CONTROLS -->
   <div id="controlsBar">
-    <div class="filter-btns">
-      <button class="filter-btn active" data-filter="minimal">MINIMAL</button>
-      <button class="filter-btn" data-filter="dark">DARK</button>
-      <button class="filter-btn" data-filter="orange">ORANGE</button>
-    </div>
+    <button id="recordBtn" aria-label="Record">⏱</button>
     <button id="captureBtn" aria-label="Capture"></button>
-    <div class="right-controls">
-      <button id="flipBtn" aria-label="Flip Camera">⟳</button>
-      <button id="recordBtn" aria-label="Record">⏱</button>
-    </div>
+    <button id="flipBtn" aria-label="Flip Camera">⟳</button>
   </div>
 </div>
 
@@ -543,7 +551,7 @@ var today  = new Date();
 var YEAR   = today.getFullYear();
 var dateStr = YEAR + '.' + String(today.getMonth()+1).padStart(2,'0') + '.' + String(today.getDate()).padStart(2,'0');
 if (ovDateDisp) ovDateDisp.textContent = dateStr;
-if (ovRaceLabel) ovRaceLabel.textContent = 'REXTREME 2026 \u00b7 2026.08.01';
+if (ovRaceLabel) ovRaceLabel.textContent = '2026. 08. 01 \u00b7 \uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
 
 // ── LANDING ──
 
@@ -612,6 +620,7 @@ recordClearBtn.addEventListener('click', function() {
 
 function updateOverlay() {
   var displayDate = (record && record.raceDate) ? record.raceDate : dateStr;
+  var displayVenue = (record && record.venue) ? record.venue : '\uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
   if (record && record.time) {
     ovInfoRight.classList.add('has-record');
     ovInfoRight.innerHTML =
@@ -619,21 +628,21 @@ function updateOverlay() {
       '<div class="ov-cat">' + record.category + '</div>' +
       (record.name ? '<div class="ov-name">' + record.name + '</div>' : '') +
       '<div class="ov-date">' + displayDate + '</div>' +
-      '<div class="ov-venue">' + record.venue + '</div>';
+      '<div class="ov-venue">' + displayVenue + '</div>';
     ovRaceName.textContent = record.race;
     ovRaceName.style.display = 'block';
-    ovRaceLabel.textContent = record.race + ' \u00b7 ' + record.raceDate;
+    ovRaceLabel.textContent = record.raceDate + ' \u00b7 ' + displayVenue;
   } else if (record) {
     ovInfoRight.classList.remove('has-record');
-    ovInfoRight.innerHTML = '<div class="ov-date">' + displayDate + '</div><div class="ov-venue">' + record.venue + '</div>';
+    ovInfoRight.innerHTML = '<div class="ov-date">' + displayDate + '</div><div class="ov-venue">' + displayVenue + '</div>';
     ovRaceName.textContent = record.race;
     ovRaceName.style.display = 'block';
-    ovRaceLabel.textContent = record.race + ' \u00b7 ' + record.raceDate;
+    ovRaceLabel.textContent = record.raceDate + ' \u00b7 ' + displayVenue;
   } else {
     ovInfoRight.classList.remove('has-record');
     ovInfoRight.innerHTML = '<span id="ovDateDisplay">' + dateStr + '</span><br>SEOUL';
     ovRaceName.style.display = 'none';
-    ovRaceLabel.textContent = 'REXTREME 2026 \u00b7 2026.08.01';
+    ovRaceLabel.textContent = '2026. 08. 01 \u00b7 \uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
   }
 }
 
@@ -762,31 +771,25 @@ async function renderCanvas() {
     var g1 = ctx.createRadialGradient(W/2,H/2,H*0.15,W/2,H/2,H*0.72);
     g1.addColorStop(0,'rgba(0,0,0,0.03)'); g1.addColorStop(1,'rgba(0,0,0,0.58)');
     ctx.fillStyle = g1; ctx.fillRect(0,0,W,H);
-  } else {
-    var g2 = ctx.createLinearGradient(0,0,0,H);
-    g2.addColorStop(0,'rgba(249,115,22,0.13)'); g2.addColorStop(0.36,'rgba(0,0,0,0)');
-    g2.addColorStop(0.64,'rgba(0,0,0,0)'); g2.addColorStop(1,'rgba(249,115,22,0.16)');
-    ctx.fillStyle = g2; ctx.fillRect(0,0,W,H);
   }
 
   // Color palette per filter
   var tc, lc, ac; // text, line, accent
   if (filter === 'minimal') { tc='#111111'; lc='rgba(0,0,0,0.22)'; ac='#111111'; }
-  else if (filter === 'dark') { tc='#f0f0f0'; lc='rgba(255,255,255,0.3)'; ac='#f0f0f0'; }
-  else { tc='#1a1a1a'; lc='#F97316'; ac='#F97316'; }
-  var brandC = filter === 'orange' ? '#F97316' : tc;
+  else { tc='#f0f0f0'; lc='rgba(255,255,255,0.3)'; ac='#f0f0f0'; }
+  var brandC = tc;
 
   // ── Padding ──
   var px = 72, py = 0;
 
   // ── TOP RULE ──
   py = 110;
-  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : (filter === 'orange' ? 'rgba(249,115,22,0.45)' : 'rgba(0,0,0,0.18)');
+  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
   ctx.lineWidth = 1.5;
   hline(px, py, W-px);
 
   // ── WORDMARK ──
-  py = 160;
+  py = 155;
   var wmImg = await svgToImg(WM_SVG, brandC);
   if (wmImg) {
     var wmW = 640, wmH = wmW*(33/226);
@@ -794,8 +797,17 @@ async function renderCanvas() {
     py += wmH;
   }
 
-  // ── THIN RULE BELOW WORDMARK ──
-  py += 28;
+  // ── REXTREME LABEL ──
+  py += 16;
+  ctx.fillStyle = tc; ctx.globalAlpha = 0.72;
+  ctx.font = '700 40px ' + MANROPE;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.letterSpacing = '0.32em';
+  ctx.fillText('REXTREME', W/2, py);
+  ctx.globalAlpha = 1;
+  py += 50;
+
+  // ── THIN RULE BELOW ──
   ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
   hline((W-500)/2, py, (W+500)/2);
   py += 22;
@@ -804,8 +816,9 @@ async function renderCanvas() {
   ctx.fillStyle = tc; ctx.globalAlpha = 0.62;
   ctx.font = 'italic 400 36px ' + SERIF;
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  var canvasRaceLabel = (record && record.race) ? record.race + ' \u00b7 ' + (record.raceDate || '2026.08.01') : 'REXTREME 2026 \u00b7 2026.08.01';
-  ctx.fillText(canvasRaceLabel, W/2, py);
+  var canvasRaceDate = (record && record.raceDate) ? record.raceDate : '2026. 08. 01';
+  var canvasVenue = (record && record.venue) ? record.venue : '\uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
+  ctx.fillText(canvasRaceDate + ' \u00b7 ' + canvasVenue, W/2, py);
   ctx.globalAlpha = 1;
   py += 60;
 
@@ -865,7 +878,7 @@ async function renderCanvas() {
 
   // Race name (serif italic)
   if (record && record.race) {
-    ctx.fillStyle = filter === 'orange' ? '#F97316' : tc;
+    ctx.fillStyle = tc;
     ctx.font = 'italic 400 54px ' + SERIF;
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillText(record.race, px, botBase);
@@ -890,7 +903,7 @@ async function renderCanvas() {
 
   // Logo row
   var logoY = H - 110;
-  var logoColor = filter === 'orange' ? '#F97316' : tc;
+  var logoColor = tc;
   var logoWm = await svgToImg(WM_SVG, logoColor);
   if (logoWm) {
     var lW = 300, lH = lW*(33/226);
@@ -907,7 +920,7 @@ async function renderCanvas() {
   if (iconImg) { ctx.globalAlpha=0.75; ctx.drawImage(iconImg, W-px-72, logoY-54, 72, 72); ctx.globalAlpha=1; }
 
   // Bottom rule
-  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : (filter === 'orange' ? 'rgba(249,115,22,0.45)' : 'rgba(0,0,0,0.18)');
+  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
   ctx.lineWidth = 1.5;
   hline(px, H-38, W-px);
 }
