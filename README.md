@@ -3,8 +3,9 @@
 REXTREME (2026.08.01, 수원컨벤션센터) 현장용 카메라 필터. 단일 정적 페이지로 GitHub
 Pages에서 서비스한다 → https://juno-5.github.io/darimati-filter/
 
-참가자를 배경에서 분리(MediaPipe Selfie Segmentation)해서 브랜드 박스 프레임 **안에**
-세우고, 기록·종목·이름을 얹어 저장/공유한다.
+필터는 4종이다. RIBBON/SPORT는 참가자를 배경에서 분리해 브랜드 박스 프레임 **안에**
+세우는 타입(`type:'box'`), MINIMAL/DARK는 누끼 없이 사진 전체 위에 매거진 타이포를
+얹는 타입(`type:'overlay'`)이다. 넷 다 기록·종목·이름을 얹어 저장/공유한다.
 
 ## 구조
 

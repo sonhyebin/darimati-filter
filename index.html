@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://storage.googleapis.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@500;700;900&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="frame-ribbon.jpg">
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -278,6 +278,8 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
   <div class="filter-btns" id="filterBtnsBar">
     <button class="filter-btn active" data-filter="ribbon">RIBBON</button>
     <button class="filter-btn" data-filter="sport">SPORT</button>
+    <button class="filter-btn" data-filter="minimal">MINIMAL</button>
+    <button class="filter-btn" data-filter="dark">DARK</button>
   </div>
 
   <!-- CONTROLS -->
@@ -329,6 +331,8 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
   <div class="review-tools">
     <button class="review-chip frame-chip active" data-frame="ribbon">RIBBON</button>
     <button class="review-chip frame-chip" data-frame="sport">SPORT</button>
+    <button class="review-chip frame-chip" data-frame="minimal">MINIMAL</button>
+    <button class="review-chip frame-chip" data-frame="dark">DARK</button>
     <button class="review-chip" id="reviewRecordBtn">✎ 기록 수정</button>
   </div>
   <div class="review-actions">
@@ -360,6 +364,7 @@ window.__importModule = function(url) { return import(url); };
 ══════════════════════════════════════════ */
 var FRAME_DEFS = {
   ribbon: {
+    type: 'box',
     plate: 'frame-ribbon.jpg',
     w: 1055, h: 1491,
     // the ribbon bow is tied on the front of the box, so it occludes the person
@@ -373,6 +378,7 @@ var FRAME_DEFS = {
     }
   },
   sport: {
+    type: 'box',
     plate: 'frame-sport.jpg',
     w: 1024, h: 1536,
     fg: null,
@@ -383,11 +389,34 @@ var FRAME_DEFS = {
       time: { y:0.8522, size:0.0371, color:'#0a0a0a' },
       cat:  { y:0.8865, size:0.0211, color:'#0a0a0a', maxW:0.2475 }
     }
-  }
+  },
+  // the original magazine-editorial filters: full photo, no cutout, type over it
+  minimal: { type:'overlay', variant:'minimal', w:1080, h:1920 },
+  dark:    { type:'overlay', variant:'dark',    w:1080, h:1920 }
 };
 
 var MANROPE = '"Manrope",-apple-system,BlinkMacSystemFont,sans-serif';
 var KRSANS  = '"Noto Sans KR","Manrope",-apple-system,sans-serif';
+var SERIF   = '"DM Serif Display",Georgia,serif';
+
+/* ── brand marks for the magazine overlays ── */
+var WM_PATH = 'M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z';
+var WM_SVG   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 226 33"><path fill="__C__" d="' + WM_PATH + '"/></svg>';
+var ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="__C__"/><path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="__C__"/><path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="__C__"/></svg>';
+
+var OVERLAY_INK = { minimal: '#111111', dark: '#f0f0f0' };
+var svgMarks = {};   // { minimal: {wm,icon}, dark: {wm,icon} }
+
+function svgToImg(template, color) {
+  return new Promise(function(resolve) {
+    var s = template.replace(/__C__/g, color);
+    var b64 = btoa(unescape(encodeURIComponent(s)));
+    var img = new Image();
+    img.onload = function() { resolve(img); };
+    img.onerror = function() { resolve(null); };
+    img.src = 'data:image/svg+xml;base64,' + b64;
+  });
+}
 
 /* ── segmentation sources, newest first ── */
 var TASKS_VISION = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
@@ -492,6 +521,13 @@ var personCanvas = document.createElement('canvas');
 var personCtx    = personCanvas.getContext('2d');
 var personReady  = false;
 
+// unmasked (but mirrored) camera frame — the overlay filters shoot the photo
+// as-is, no cutout
+var rawCanvas = document.createElement('canvas');
+var rawCtx    = rawCanvas.getContext('2d');
+var capturedRaw = document.createElement('canvas');
+var capturedRawCtx = capturedRaw.getContext('2d');
+
 // frozen copy of the person at the moment of capture, so the review screen can
 // re-composite the same shot with a different frame or an edited record
 var capturedPerson = document.createElement('canvas');
@@ -529,23 +565,32 @@ function loadImage(src) {
 }
 
 function loadAllFrames() {
-  var keys = Object.keys(FRAME_DEFS);
-  return Promise.all(keys.map(function(key) {
+  var jobs = Object.keys(FRAME_DEFS).map(function(key) {
     var def = FRAME_DEFS[key];
-    var jobs = [loadImage(def.plate)];
-    jobs.push(def.fg ? loadImage(def.fg.src) : Promise.resolve(null));
-    return Promise.all(jobs).then(function(res) {
+    if (def.type !== 'box') return Promise.resolve();
+    var parts = [loadImage(def.plate)];
+    parts.push(def.fg ? loadImage(def.fg.src) : Promise.resolve(null));
+    return Promise.all(parts).then(function(res) {
       frameAssets[key] = { plate: res[0], fg: res[1] };
     });
-  }));
+  });
+  // brand marks for the overlay filters, one tint per variant
+  Object.keys(OVERLAY_INK).forEach(function(variant) {
+    var ink = OVERLAY_INK[variant];
+    jobs.push(Promise.all([svgToImg(WM_SVG, ink), svgToImg(ICON_SVG, ink)])
+      .then(function(res) { svgMarks[variant] = { wm: res[0], icon: res[1] }; }));
+  });
+  return Promise.all(jobs);
 }
 
 function loadFonts() {
   if (!document.fonts || !document.fonts.load) return Promise.resolve();
   return Promise.all([
     document.fonts.load('800 40px "Manrope"'),
-    document.fonts.load('700 30px "Noto Sans KR"')
-  ]).catch(function() { /* fall back to system sans */ });
+    document.fonts.load('700 30px "Noto Sans KR"'),
+    document.fonts.load('400 40px "DM Serif Display"'),
+    document.fonts.load('italic 400 40px "DM Serif Display"')
+  ]).catch(function() { /* fall back to system fonts */ });
 }
 
 /* ══════════════════════════════════════════
@@ -775,6 +820,15 @@ function buildPersonLayer(image, mask) {
     personCanvas.width = vw; personCanvas.height = vh;
   }
 
+  // keep the plain frame too, for the overlay filters
+  if (rawCanvas.width !== vw || rawCanvas.height !== vh) {
+    rawCanvas.width = vw; rawCanvas.height = vh;
+  }
+  rawCtx.setTransform(1, 0, 0, 1, 0, 0);
+  if (isFront) rawCtx.setTransform(-1, 0, 0, 1, vw, 0);
+  rawCtx.drawImage(image, 0, 0, vw, vh);
+  rawCtx.setTransform(1, 0, 0, 1, 0, 0);
+
   personCtx.setTransform(1, 0, 0, 1, 0, 0);
   personCtx.globalCompositeOperation = 'source-over';
   personCtx.clearRect(0, 0, vw, vh);
@@ -874,9 +928,162 @@ function buildStageLayer(person, box, sw, sh) {
   return stageCanvas;
 }
 
-function drawComposite(ctx, W, H, key, plate, person, box) {
+/* ── MAGAZINE OVERLAYS (the original filters): full photo, type on top.
+   Drawn in a fixed 1080×1920 space and scaled to the target canvas. ── */
+function drawMagazine(ctx, W, H, variant, raw) {
+  var ink = OVERLAY_INK[variant];
+  var marks = svgMarks[variant] || {};
+  var lc = variant === 'dark' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.22)';
+  var rc = variant === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.scale(W / 1080, H / 1920);
+  W = 1080; H = 1920;
+
+  // photo, cover-cropped (rawCanvas is already mirrored)
+  if (raw && raw.width) {
+    var va = raw.width / raw.height, ca = W / H, sx, sy, sw, sh;
+    if (va > ca) { sh = raw.height; sw = sh * ca; sx = (raw.width - sw) / 2; sy = 0; }
+    else { sw = raw.width; sh = sw / ca; sx = 0; sy = (raw.height - sh) / 2; }
+    ctx.drawImage(raw, sx, sy, sw, sh, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#dddddd';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // wash
+  if (variant === 'minimal') {
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    var g1 = ctx.createRadialGradient(W/2, H/2, H*0.15, W/2, H/2, H*0.72);
+    g1.addColorStop(0, 'rgba(0,0,0,0.03)');
+    g1.addColorStop(1, 'rgba(0,0,0,0.58)');
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  var px = 72;
+  function hline(x1, y, x2) { ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke(); }
+
+  // top rule + wordmark + labels
+  ctx.strokeStyle = rc; ctx.lineWidth = 1.5;
+  hline(px, 110, W - px);
+
+  var py = 155;
+  if (marks.wm) {
+    var wmW = 640, wmH = wmW * (33/226);
+    ctx.drawImage(marks.wm, (W - wmW)/2, py, wmW, wmH);
+    py += wmH;
+  }
+
+  py += 16;
+  ctx.fillStyle = ink; ctx.globalAlpha = 0.72;
+  ctx.font = '700 40px ' + MANROPE;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('R E X T R E M E', W/2, py);
+  ctx.globalAlpha = 1;
+  py += 50;
+
+  ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
+  hline((W - 500)/2, py, (W + 500)/2);
+  py += 22;
+
+  ctx.fillStyle = ink; ctx.globalAlpha = 0.62;
+  ctx.font = 'italic 400 36px ' + SERIF;
+  ctx.fillText('2026. 08. 01 · 수원컨벤션센터', W/2, py);
+  ctx.globalAlpha = 1;
+  py += 60;
+
+  // tagline
+  var tagY = py + 10;
+  if (variant === 'dark') { ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; }
+  ctx.fillStyle = ink;
+  ctx.font = '800 118px ' + MANROPE;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('RUN.', px, tagY);
+  ctx.fillText('YOUR.', px, tagY + 140);
+  ctx.fillText('CITY.', px, tagY + 280);
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+
+  // right info: record or date
+  ctx.textAlign = 'right';
+  if (variant === 'dark') { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 12; }
+  if (record.time) {
+    ctx.fillStyle = ink; ctx.font = '900 84px ' + MANROPE;
+    ctx.fillText(record.time, W - px, tagY + 18);
+    ctx.font = '700 40px ' + KRSANS;
+    ctx.fillText(record.category, W - px, tagY + 122);
+    if (record.name) {
+      ctx.font = '600 38px ' + KRSANS; ctx.globalAlpha = 0.78;
+      ctx.fillText(record.name, W - px, tagY + 185);
+      ctx.globalAlpha = 1;
+    }
+    ctx.font = '700 46px ' + MANROPE; ctx.globalAlpha = 0.72;
+    ctx.fillText('2026.08.01', W - px, tagY + 380);
+    ctx.font = '500 36px ' + KRSANS; ctx.globalAlpha = 0.56;
+    ctx.fillText('수원컨벤션센터', W - px, tagY + 442);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle = ink; ctx.font = '700 52px ' + MANROPE; ctx.globalAlpha = 0.72;
+    ctx.fillText('2026.08.01', W - px, tagY + 370);
+    ctx.font = '500 40px ' + KRSANS; ctx.globalAlpha = 0.55;
+    ctx.fillText('수원컨벤션센터', W - px, tagY + 436);
+    ctx.globalAlpha = 1;
+  }
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+
+  // bottom section
+  var botBase = H - 480;
+  ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
+  hline(px, botBase, px + 340);
+  botBase += 38;
+
+  ctx.fillStyle = ink; ctx.globalAlpha = 0.72;
+  ctx.font = 'italic 400 46px ' + SERIF;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('The bridge between', px, botBase);
+  ctx.fillText('you and the road.', px, botBase + 60);
+  ctx.globalAlpha = 1;
+  botBase += 138;
+
+  ctx.fillStyle = ink; ctx.globalAlpha = 0.45;
+  ctx.font = '500 26px ' + KRSANS;
+  ctx.fillText('#DARIMATI  #REXTREME  #렉스트림  #다리마티', px, botBase);
+  ctx.globalAlpha = 1;
+
+  // logo row
+  var logoY = H - 110;
+  if (marks.wm) {
+    var lW = 300, lH = lW * (33/226);
+    ctx.drawImage(marks.wm, px, logoY - lH, lW, lH);
+  }
+  ctx.fillStyle = ink; ctx.globalAlpha = 0.7;
+  ctx.font = '400 28px ' + KRSANS; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('다리마티', px, logoY + 4);
+  ctx.globalAlpha = 1;
+  if (marks.icon) {
+    ctx.globalAlpha = 0.75;
+    ctx.drawImage(marks.icon, W - px - 72, logoY - 54, 72, 72);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.strokeStyle = rc; ctx.lineWidth = 1.5;
+  hline(px, H - 38, W - px);
+
+  ctx.restore();
+}
+
+function drawComposite(ctx, W, H, key, plate, person, box, raw) {
   var def = FRAME_DEFS[key];
   var assets = frameAssets[key] || {};
+
+  if (def.type === 'overlay') {
+    drawMagazine(ctx, W, H, def.variant, raw);
+    return;
+  }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, H);
@@ -983,18 +1190,19 @@ function previewPlate(key, W, H) {
 function renderPreview() {
   var W = displayCanvas.width, H = displayCanvas.height;
   drawComposite(displayCtx, W, H, currentFrame, previewPlate(currentFrame, W, H),
-                personReady ? personCanvas : null, personBox);
+                personReady ? personCanvas : null, personBox,
+                personReady ? rawCanvas : null);
 }
 
 /* ══════════════════════════════════════════
    EXPORT — rendered at the frame's native resolution
 ══════════════════════════════════════════ */
-function renderExport(person, box) {
+function renderExport(person, box, raw) {
   var def = FRAME_DEFS[currentFrame];
   var assets = frameAssets[currentFrame] || {};
   exportCanvas.width = def.w;
   exportCanvas.height = def.h;
-  drawComposite(exportCtx, def.w, def.h, currentFrame, assets.plate || null, person, box);
+  drawComposite(exportCtx, def.w, def.h, currentFrame, assets.plate || null, person, box, raw);
 }
 
 /* Freeze the current cutout (and its box) so review-screen edits keep
@@ -1004,6 +1212,11 @@ function snapshotPerson() {
   capturedPerson.width = personCanvas.width;
   capturedPerson.height = personCanvas.height;
   capturedPersonCtx.drawImage(personCanvas, 0, 0);
+  if (rawCanvas.width) {
+    capturedRaw.width = rawCanvas.width;
+    capturedRaw.height = rawCanvas.height;
+    capturedRawCtx.drawImage(rawCanvas, 0, 0);
+  }
   capturedPersonBox = personBox;
   return capturedPerson;
 }
@@ -1199,7 +1412,7 @@ function flushCapture() {
   if (!pendingCapture) return;
   var done = pendingCapture;
   pendingCapture = null;
-  renderExport(snapshotPerson(), capturedPersonBox);
+  renderExport(snapshotPerson(), capturedPersonBox, capturedRaw.width ? capturedRaw : null);
   done();
 }
 
@@ -1235,6 +1448,15 @@ function buildDemoPerson() {
   personReady = true;
   // bbox of the silhouette above (head top = 0.24·vh − 0.155·vw)
   personBox = { x0: 0.2, y0: 0.124, x1: 0.8, y1: 1, mirrored: false };
+
+  // plain "photo" for the overlay filters: grey scene with the silhouette
+  rawCanvas.width = vw; rawCanvas.height = vh;
+  var bg = rawCtx.createLinearGradient(0, 0, 0, vh);
+  bg.addColorStop(0, '#c9cdd2');
+  bg.addColorStop(1, '#9aa0a8');
+  rawCtx.fillStyle = bg;
+  rawCtx.fillRect(0, 0, vw, vh);
+  rawCtx.drawImage(personCanvas, 0, 0);
 }
 
 /* ══════════════════════════════════════════
@@ -1319,11 +1541,18 @@ flipBtn.addEventListener('click', function() {
 ══════════════════════════════════════════ */
 function nextRenderedFrame() {
   // DEMO and the no-camera case have no frame loop to wait on
-  if (DEMO) { renderExport(snapshotPerson(), capturedPersonBox); return Promise.resolve(); }
+  if (DEMO) {
+    renderExport(snapshotPerson(), capturedPersonBox, capturedRaw.width ? capturedRaw : null);
+    return Promise.resolve();
+  }
   return new Promise(function(resolve) {
     pendingCapture = resolve;
     setTimeout(function() {
-      if (pendingCapture === resolve) { pendingCapture = null; renderExport(snapshotPerson(), capturedPersonBox); resolve(); }
+      if (pendingCapture === resolve) {
+        pendingCapture = null;
+        renderExport(snapshotPerson(), capturedPersonBox, capturedRaw.width ? capturedRaw : null);
+        resolve();
+      }
     }, 700);
   });
 }
@@ -1361,7 +1590,8 @@ function syncFrameButtons() {
 function rebuildCapture() {
   if (!reviewing) return;
   var gen = ++exportGen;
-  renderExport(capturedPerson.width ? capturedPerson : null, capturedPersonBox);
+  renderExport(capturedPerson.width ? capturedPerson : null, capturedPersonBox,
+               capturedRaw.width ? capturedRaw : null);
   exportCanvas.toBlob(function(blob) {
     if (!blob || !reviewing || gen !== exportGen) return;
     var old = reviewImage.src;
