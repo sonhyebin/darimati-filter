@@ -39,7 +39,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   background:rgba(43,46,48,0.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(255,255,255,0.07);
 }
-.landing-nav .wordmark-svg { width:120px; height:auto; color:var(--text-light); }
+.landing-nav .wordmark-svg { width:130px; height:auto; color:#fff; }
 .nav-label {
   font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem; font-weight:400;
   color:var(--text-muted); letter-spacing:0.22em; text-transform:uppercase;
@@ -52,12 +52,12 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   padding:2rem; overflow:hidden; background:var(--charcoal); text-align:center;
 }
 .hero-icon-mark {
-  width:44px; height:44px; color:var(--text-light); opacity:0.3;
+  width:52px; height:52px; color:var(--text-light); opacity:0.85;
   margin-bottom:1.6rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
 }
 .hero-wordmark {
-  width:min(65vw,260px); height:auto; color:var(--text-light);
+  width:min(75vw,300px); height:auto; color:#fff;
   margin-bottom:0.6rem;
   animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.35s both;
 }
@@ -143,7 +143,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 .filter-orange .ov-rule-top { background:rgba(249,115,22,0.5); }
 
 .ov-wordmark { display:flex; justify-content:center; margin-bottom:0.55rem; }
-.ov-wordmark .wordmark-svg { width:52vw; max-width:260px; height:auto; color:currentColor; }
+.ov-wordmark .wordmark-svg { width:58vw; max-width:290px; height:auto; color:currentColor; }
 .filter-orange .ov-wordmark .wordmark-svg { color:var(--orange); }
 .ov-thin-rule { width:min(55vw,240px); height:1px; margin:0 auto 0.5rem; }
 .filter-minimal .ov-thin-rule { background:rgba(0,0,0,0.22); }
@@ -198,10 +198,10 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 }
 .ov-logo-row { display:flex; align-items:center; justify-content:space-between; }
 .ov-logo-left { display:flex; flex-direction:column; gap:2px; }
-.ov-logo-left .wordmark-svg { width:105px; height:auto; color:currentColor; }
-.ov-logo-sub { font-size:0.6rem; letter-spacing:0.22em; opacity:0.5; margin-top:1px; }
+.ov-logo-left .wordmark-svg { width:120px; height:auto; color:currentColor; }
+.ov-logo-sub { font-size:0.6rem; letter-spacing:0.22em; opacity:0.7; margin-top:1px; }
 .filter-orange .ov-logo-left .wordmark-svg { color:var(--orange); }
-.ov-icon-mark { width:28px; height:28px; color:currentColor; opacity:0.45; }
+.ov-icon-mark { width:32px; height:32px; color:currentColor; opacity:0.75; }
 .filter-orange .ov-icon-mark { color:var(--orange); }
 .ov-bottom-rule-foot { height:1px; margin-top:0.65rem; }
 .filter-minimal .ov-bottom-rule-foot { background:rgba(0,0,0,0.18); }
@@ -789,7 +789,7 @@ async function renderCanvas() {
   py = 160;
   var wmImg = await svgToImg(WM_SVG, brandC);
   if (wmImg) {
-    var wmW = 580, wmH = wmW*(33/226);
+    var wmW = 640, wmH = wmW*(33/226);
     ctx.drawImage(wmImg, (W-wmW)/2, py, wmW, wmH);
     py += wmH;
   }
@@ -893,18 +893,18 @@ async function renderCanvas() {
   var logoColor = filter === 'orange' ? '#F97316' : tc;
   var logoWm = await svgToImg(WM_SVG, logoColor);
   if (logoWm) {
-    var lW = 260, lH = lW*(33/226);
+    var lW = 300, lH = lW*(33/226);
     ctx.drawImage(logoWm, px, logoY - lH, lW, lH);
   }
   // Sub label
-  ctx.fillStyle = logoColor; ctx.globalAlpha = 0.5;
+  ctx.fillStyle = logoColor; ctx.globalAlpha = 0.7;
   ctx.font = '400 28px ' + SANS; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   ctx.fillText('다리마티', px, logoY + 4);
   ctx.globalAlpha = 1;
 
   // Icon mark (right)
   var iconImg = await svgToImg(ICON_SVG, logoColor);
-  if (iconImg) { ctx.globalAlpha=0.42; ctx.drawImage(iconImg, W-px-64, logoY-50, 64, 64); ctx.globalAlpha=1; }
+  if (iconImg) { ctx.globalAlpha=0.75; ctx.drawImage(iconImg, W-px-72, logoY-54, 72, 72); ctx.globalAlpha=1; }
 
   // Bottom rule
   ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : (filter === 'orange' ? 'rgba(249,115,22,0.45)' : 'rgba(0,0,0,0.18)');
