@@ -474,6 +474,12 @@ var segMode        = 'none';    // 'tasks' | 'legacy' | 'none'
 var taskSegmenter  = null;
 var selfieSegmentation = null;
 var maskEMA        = null;
+var lastVideoTs    = 0;         // segmentForVideo needs strictly increasing timestamps
+var emptyStreak    = 0;
+var demoting       = false;
+// ?seg=tasks|legacy|none forces a segmenter (debugging aid)
+var segForceMatch  = location.search.match(/[?&]seg=(tasks|legacy|none)\b/);
+var segForce       = segForceMatch ? segForceMatch[1] : null;
 var shutterDelay   = 0;
 var shutterCountingDown = false;
 var pendingCapture = null;   // resolve fn, set while a shutter press waits for a frame
@@ -1077,20 +1083,27 @@ function initLegacySegmenter() {
   });
 }
 
+function withTimeout(promise, ms) {
+  return Promise.race([promise, new Promise(function(_, reject) {
+    setTimeout(function() { reject(new Error('timeout after ' + ms + 'ms')); }, ms);
+  })]);
+}
+
 /* Newest first: the multiclass Tasks segmenter (hair/skin/clothes classes →
    far cleaner edges), then the 2021 selfie model, then raw video. The frame
    loop runs from the start, so the camera shows immediately and the cutout
    pops in when a model becomes ready. */
 async function initSegmentation() {
-  if (window.__importModule) {
+  if (segForce === 'none') { console.info('[seg] forced: none'); return; }
+  if (segForce !== 'legacy' && window.__importModule) {
     try {
-      taskSegmenter = await initTasksSegmenter('GPU');
+      taskSegmenter = await withTimeout(initTasksSegmenter('GPU'), 12000);
       segMode = 'tasks';
       console.info('[seg] mode: tasks (GPU)');
       return;
     } catch (err) { console.warn('[seg] tasks GPU failed', err); }
     try {
-      taskSegmenter = await initTasksSegmenter('CPU');
+      taskSegmenter = await withTimeout(initTasksSegmenter('CPU'), 12000);
       segMode = 'tasks';
       console.info('[seg] mode: tasks (CPU)');
       return;
@@ -1107,12 +1120,43 @@ async function initSegmentation() {
   }
 }
 
+/* A runtime failure of the Tasks segmenter must cost the cutout QUALITY, not
+   the cutout itself — drop to the legacy model, never straight to raw video. */
+function demoteFromTasks(err) {
+  if (demoting) return;
+  demoting = true;
+  console.warn('[seg] tasks failed at runtime — demoting to legacy', err);
+  try { if (taskSegmenter) taskSegmenter.close(); } catch (e) {}
+  taskSegmenter = null;
+  maskEMA = null;
+  segMode = 'none';   // raw video only while legacy loads
+  var load = (typeof SelfieSegmentation === 'undefined')
+    ? loadScript(LEGACY_SEG) : Promise.resolve();
+  load.then(function() {
+    initLegacySegmenter();
+    segMode = 'legacy';
+    console.info('[seg] mode: legacy (demoted)');
+  }).catch(function(e) {
+    console.warn('[seg] legacy unavailable — raw video', e);
+    selfieSegmentation = null;
+    segMode = 'none';
+  });
+}
+
 function onTaskResult(result) {
   var masks = result.confidenceMasks;
   if (!masks || !masks[0]) return;
   buildPersonLayer(video, refineTaskMask(masks[0]));
   renderPreview();
   flushCapture();
+
+  // model runs but never finds anyone → the legacy model may do better on
+  // this device; an actually-empty scene loses nothing by switching
+  if (!lastMaskBox) {
+    if (++emptyStreak > 150) demoteFromTasks(new Error('empty mask for ~150 frames'));
+  } else {
+    emptyStreak = 0;
+  }
 }
 
 function startFrameLoop() {
@@ -1121,12 +1165,16 @@ function startFrameLoop() {
     if (video.readyState >= 2) {
       if (segMode === 'tasks' && taskSegmenter) {
         try {
+          // iOS coarsens performance.now() to 1ms, so two frames can read the
+          // same clock value — segmentForVideo throws unless we keep the
+          // timestamps strictly increasing ourselves
+          var ts = Math.max(lastVideoTs + 1, performance.now());
+          lastVideoTs = ts;
           // callback form: the result is only valid inside the callback and is
           // freed automatically afterwards
-          taskSegmenter.segmentForVideo(video, performance.now(), onTaskResult);
+          taskSegmenter.segmentForVideo(video, ts, onTaskResult);
         } catch (err) {
-          console.error('[seg] tasks failed at runtime — raw video', err);
-          taskSegmenter = null; segMode = 'none';
+          demoteFromTasks(err);
         }
       } else if (segMode === 'legacy' && selfieSegmentation) {
         try {
