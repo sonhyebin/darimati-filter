@@ -45,83 +45,58 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   color:var(--text-muted); letter-spacing:0.22em; text-transform:uppercase;
 }
 
-/* ── HERO ── */
+/* ── HERO (simple centered) ── */
 .landing-hero {
   position:relative; width:100%; height:100vh; height:100dvh;
-  display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end;
-  padding:5rem 2rem calc(2rem + var(--safe-bottom)); overflow:hidden; background:var(--charcoal);
-}
-.hero-rule-top {
-  position:absolute; top:4.5rem; left:2rem; right:2rem; height:1px;
-  background:rgba(255,255,255,0.15);
-  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:2rem; overflow:hidden; background:var(--charcoal); text-align:center;
 }
 .hero-icon-mark {
-  position:absolute; top:5.5rem; right:2rem;
-  width:36px; height:36px; color:var(--text-light); opacity:0.25;
+  width:44px; height:44px; color:var(--text-light); opacity:0.3;
+  margin-bottom:1.6rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
 }
-.hero-edit-label {
-  font-family:"Bricolage Grotesque",sans-serif; font-size:0.62rem; font-weight:400;
-  color:var(--text-muted); letter-spacing:0.28em; text-transform:uppercase;
-  margin-bottom:1.4rem;
-  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both;
-}
 .hero-wordmark {
-  width:min(72vw,300px); height:auto; color:var(--text-light);
-  margin-bottom:2.5rem;
-  animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.4s both;
-}
-.hero-tagline-block {
-  margin-bottom:2.8rem;
-  animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.55s both;
-}
-.hero-tagline-big {
-  font-family:"Manrope",sans-serif; font-size:clamp(2.4rem,10vw,4rem);
-  font-weight:800; line-height:1.08; letter-spacing:-0.02em;
-  color:var(--text-light); display:block;
-}
-.hero-tagline-big em {
-  font-style:normal; font-family:var(--serif); font-weight:400;
-  font-size:0.85em; color:rgba(255,255,255,0.6);
+  width:min(65vw,260px); height:auto; color:var(--text-light);
+  margin-bottom:0.6rem;
+  animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.35s both;
 }
 .hero-rule-mid {
-  width:60px; height:1px; background:rgba(255,255,255,0.3); margin:1.4rem 0;
-}
-.hero-sub-text {
-  font-family:"Manrope",sans-serif; font-size:clamp(0.85rem,3.5vw,1rem);
-  font-weight:400; color:var(--text-muted); line-height:1.7; max-width:280px;
-}
-.hero-sub-text .reveal-word {
-  display:inline-block; opacity:0; transform:translateY(6px);
-  animation:wordReveal 0.5s cubic-bezier(0.16,1,0.3,1) forwards;
+  width:48px; height:1px; background:rgba(255,255,255,0.25); margin:0.6rem auto 0.7rem;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s both;
 }
 .hero-race-date {
-  font-family:var(--serif); font-style:italic; font-size:0.82rem;
-  color:rgba(255,255,255,0.55); letter-spacing:0.12em;
-  margin-bottom:1.8rem;
-  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.2s both;
+  font-family:var(--serif); font-style:italic; font-size:clamp(1.1rem,4.2vw,1.4rem);
+  color:rgba(255,255,255,0.75); letter-spacing:0.1em;
+  margin-bottom:0.3rem;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.65s both;
+}
+.hero-race-detail {
+  font-family:"Manrope",sans-serif; font-size:0.72rem; font-weight:500;
+  color:var(--text-muted); letter-spacing:0.18em; text-transform:uppercase;
+  margin-bottom:2.4rem;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.8s both;
 }
 .hero-cta-area {
-  display:flex; flex-direction:column; align-items:flex-start; gap:0.8rem;
-  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.4s both;
+  display:flex; flex-direction:column; align-items:center; gap:0.8rem;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.0s both;
 }
 #startCameraBtn {
   background:rgba(255,255,255,0.93); color:rgba(0,0,0,0.81);
-  border:none; padding:1rem 3rem; font-size:0.78rem;
+  border:none; padding:1rem 3.2rem; font-size:0.78rem;
   font-family:"Manrope",sans-serif; font-weight:700; letter-spacing:0.22em;
   text-transform:uppercase; cursor:pointer; transition:all 0.15s ease-in-out;
 }
 #startCameraBtn:active { opacity:0.7; transform:scale(0.97); }
 .cta-notice {
-  font-family:"Bricolage Grotesque",sans-serif; font-size:0.62rem;
-  color:var(--text-muted); line-height:1.7; max-width:260px; font-weight:400;
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem;
+  color:var(--text-muted); line-height:1.7; max-width:260px; font-weight:400; text-align:center;
 }
-.hero-number-accent {
-  position:absolute; right:2rem; bottom:calc(1.5rem + var(--safe-bottom));
-  font-family:var(--serif); font-style:italic; font-size:0.7rem;
-  color:rgba(255,255,255,0.2); letter-spacing:0.1em;
-  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.6s both;
+.hero-bottom-mark {
+  position:absolute; bottom:calc(1.5rem + var(--safe-bottom)); left:0; right:0;
+  text-align:center; font-family:var(--serif); font-style:italic; font-size:0.65rem;
+  color:rgba(255,255,255,0.18); letter-spacing:0.1em;
+  animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.2s both;
 }
 #permissionScreen .msg { display:none; }
 #permissionScreen .msg.error {
@@ -130,8 +105,6 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 
 /* ── ANIMATIONS ── */
 @keyframes heroFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-@keyframes wordReveal { to{opacity:1;transform:translateY(0)} }
-@keyframes scrollPulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
 
 /* ── APP ── */
 #app { display:none; position:fixed; inset:0; background:#000; }
@@ -349,28 +322,23 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
     <span class="nav-label">Race Day Filter</span>
   </nav>
 
-  <!-- HERO (single screen, no scroll) -->
+  <!-- HERO (simple centered) -->
   <section class="landing-hero">
-    <div class="hero-rule-top"></div>
     <svg class="hero-icon-mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="currentColor"/>
       <path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="currentColor"/>
       <path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="currentColor"/>
     </svg>
-    <p class="hero-edit-label">No. 01 &nbsp;·&nbsp; Race Day Edition</p>
     <svg class="hero-wordmark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
-    <div class="hero-tagline-block">
-      <span class="hero-tagline-big">RUN YOUR<br><em>CITY.</em></span>
-      <div class="hero-rule-mid"></div>
-      <p class="hero-sub-text" id="heroTagline"></p>
-    </div>
-    <p class="hero-race-date">REXTREME 2026&nbsp;&nbsp;·&nbsp;&nbsp;2026.08.03</p>
+    <div class="hero-rule-mid"></div>
+    <p class="hero-race-date">REXTREME 2026</p>
+    <p class="hero-race-detail">2026. 08. 03 &nbsp;·&nbsp; 수원컨벤션센터</p>
     <div class="hero-cta-area">
       <button id="startCameraBtn">START CAMERA</button>
       <p class="msg" id="permMsg"></p>
       <p class="cta-notice">카메라 접근 권한이 필요합니다.<br>촬영한 사진은 기기에만 저장됩니다.</p>
     </div>
-    <p class="hero-number-accent">DARIMATI.US&nbsp;&nbsp;·&nbsp;&nbsp;2026</p>
+    <p class="hero-bottom-mark">DARIMATI.US &nbsp;·&nbsp; Race Day Filter</p>
   </section>
 
 </div>
@@ -577,18 +545,7 @@ var dateStr = YEAR + '.' + String(today.getMonth()+1).padStart(2,'0') + '.' + St
 if (ovDateDisp) ovDateDisp.textContent = dateStr;
 if (ovRaceLabel) ovRaceLabel.textContent = 'REXTREME 2026 \u00b7 2026.08.03';
 
-// ── LANDING ANIMATIONS ──
-(function initLanding() {
-  var taglineWords = ['당신의', '레이스를,', '당신의', '도시에서.'];
-  var el = document.getElementById('heroTagline');
-  if (el) {
-    el.innerHTML = taglineWords.map(function(w, i) {
-      return '<span class="reveal-word" style="animation-delay:' + (1.1 + i * 0.13) + 's">' + w + '</span>';
-    }).join(' ');
-  }
-
-
-})();
+// ── LANDING ──
 
 // ── FILTER TOGGLE ──
 app.classList.add('filter-minimal');
