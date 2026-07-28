@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="rgb(43,46,48)">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <title>DARIMATI — Race Day Filter</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/style.min.css">
@@ -15,65 +15,60 @@
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 :root {
-  --orange:#F97316; --orange-light:#FB923C;
   --charcoal:rgb(43,46,48); --text-light:rgba(255,255,255,0.93);
-  --text-muted:rgba(255,255,255,0.55); --text-dark:rgba(0,0,0,0.81);
-  --sage:rgb(95,107,99); --safe-bottom:env(safe-area-inset-bottom,0px);
+  --text-muted:rgba(255,255,255,0.55); --gold:#C8A44E;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px);
   --serif:"DM Serif Display",Georgia,serif;
   --sans:"Geist Sans","Geist",-apple-system,BlinkMacSystemFont,sans-serif;
   --display:"Manrope","Bricolage Grotesque",sans-serif;
 }
-html,body { width:100%; height:100%; overflow:hidden; background:#000;
-  font-family:var(--sans); touch-action:manipulation; }
+html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-family:var(--sans); touch-action:manipulation; }
 
 /* ── LANDING ── */
 #permissionScreen {
   position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
-  background:var(--charcoal); color:var(--text-light);
-  overflow:hidden;
+  background:#fff; color:#111; overflow:hidden;
 }
 .landing-nav {
   position:fixed; top:0; left:0; right:0; z-index:110;
   display:flex; align-items:center; justify-content:space-between;
   height:56px; padding:0 1.5rem;
-  background:rgba(43,46,48,0.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(255,255,255,0.07);
+  background:rgba(255,255,255,0.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(0,0,0,0.06);
 }
-.landing-nav .wordmark-svg { width:130px; height:auto; color:#fff; }
+.landing-nav .wordmark-svg { width:120px; height:auto; color:#111; }
 .nav-label {
-  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem; font-weight:400;
-  color:var(--text-muted); letter-spacing:0.22em; text-transform:uppercase;
+  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem; font-weight:500;
+  color:rgba(0,0,0,0.4); letter-spacing:0.22em; text-transform:uppercase;
 }
-
-/* ── HERO (simple centered) ── */
 .landing-hero {
   position:relative; width:100%; height:100vh; height:100dvh;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:2rem; overflow:hidden; background:var(--charcoal); text-align:center;
+  padding:2rem; overflow:hidden; background:#fff; text-align:center;
 }
 .hero-icon-mark {
-  width:52px; height:52px; color:var(--text-light); opacity:0.85;
-  margin-bottom:1.6rem;
+  width:48px; height:48px; color:#111; opacity:0.8; margin-bottom:1.6rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both;
 }
 .hero-wordmark {
-  width:min(75vw,300px); height:auto; color:#fff;
+  width:min(70vw,280px); height:auto; color:#111;
   margin-bottom:0.6rem;
   animation:heroFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) 0.35s both;
 }
 .hero-rule-mid {
-  width:48px; height:1px; background:rgba(255,255,255,0.25); margin:0.6rem auto 0.7rem;
+  width:48px; height:1px; background:rgba(0,0,0,0.15); margin:0.6rem auto 0.7rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s both;
 }
 .hero-race-date {
-  font-family:var(--serif); font-style:italic; font-size:clamp(1.1rem,4.2vw,1.4rem);
-  color:rgba(255,255,255,0.75); letter-spacing:0.1em;
+  font-family:var(--display); font-size:0.82rem; font-weight:700;
+  color:var(--gold); letter-spacing:0.28em; text-transform:uppercase;
   margin-bottom:0.3rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.65s both;
 }
 .hero-race-detail {
-  font-family:"Manrope",sans-serif; font-size:0.72rem; font-weight:500;
-  color:var(--text-muted); letter-spacing:0.18em; text-transform:uppercase;
+  font-family:var(--display); font-size:0.68rem; font-weight:500;
+  color:rgba(0,0,0,0.4); letter-spacing:0.18em; text-transform:uppercase;
   margin-bottom:2.4rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.8s both;
 }
@@ -82,217 +77,241 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.0s both;
 }
 #startCameraBtn {
-  background:rgba(255,255,255,0.93); color:rgba(0,0,0,0.81);
+  background:#111; color:#fff;
   border:none; padding:1rem 3.2rem; font-size:0.78rem;
-  font-family:"Manrope",sans-serif; font-weight:700; letter-spacing:0.22em;
+  font-family:var(--display); font-weight:700; letter-spacing:0.22em;
   text-transform:uppercase; cursor:pointer; transition:all 0.15s ease-in-out;
 }
 #startCameraBtn:active { opacity:0.7; transform:scale(0.97); }
 .cta-notice {
-  font-family:"Bricolage Grotesque",sans-serif; font-size:0.6rem;
-  color:var(--text-muted); line-height:1.7; max-width:260px; font-weight:400; text-align:center;
+  font-family:var(--display); font-size:0.6rem;
+  color:rgba(0,0,0,0.35); line-height:1.7; max-width:260px; font-weight:400; text-align:center;
 }
 .hero-bottom-mark {
   position:absolute; bottom:calc(1.5rem + var(--safe-bottom)); left:0; right:0;
-  text-align:center; font-family:var(--serif); font-style:italic; font-size:0.65rem;
-  color:rgba(255,255,255,0.18); letter-spacing:0.1em;
+  text-align:center; font-family:var(--sans); font-size:0.6rem;
+  color:rgba(0,0,0,0.15); letter-spacing:0.14em; font-weight:500;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1.2s both;
 }
 #permissionScreen .msg { display:none; }
 #permissionScreen .msg.error {
   display:block; font-size:0.82rem; color:#e74c3c; line-height:1.7;
 }
-
-/* ── ANIMATIONS ── */
 @keyframes heroFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── APP ── */
-#app { display:none; position:fixed; inset:0; background:#000; }
-#viewfinder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-#cameraVideo { width:100%; height:100%; object-fit:cover; }
-#cameraVideo.front { transform:scaleX(-1); }
+#app { display:none; position:fixed; inset:0; background:#e8e8e8; }
+#viewfinder {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+#cameraVideo { display:none; }
+#displayCanvas {
+  width:100%; height:100%; object-fit:cover;
+}
 
-/* ── OVERLAY ── */
+/* ── OVERLAY FRAME ── */
 #overlayLayer {
   position:absolute; inset:0; pointer-events:none;
   display:flex; flex-direction:column; justify-content:space-between;
-  padding:0 0 0; transition:none;
+  color:#111;
 }
-.filter-minimal #overlayLayer { color:#111; }
-.filter-minimal #overlayLayer::before { content:""; position:absolute; inset:0; background:rgba(255,255,255,0.06); pointer-events:none; }
-.filter-dark #overlayLayer { color:#f0f0f0; }
-.filter-dark #overlayLayer::before { content:""; position:absolute; inset:0; background:radial-gradient(ellipse at center,rgba(0,0,0,0.04) 30%,rgba(0,0,0,0.58) 100%); pointer-events:none; }
-
-
+.ov-frame-border {
+  position:absolute; top:1.8%; left:3.5%; right:3.5%; bottom:1.5%;
+  border:1.5px solid rgba(0,0,0,0.12);
+  pointer-events:none;
+}
 .ov-section { position:relative; z-index:1; }
 
 /* Top */
 .ov-top {
-  padding:3.2rem 1.3rem 0;
+  padding:calc(var(--safe-top) + 3.8%) 5% 0;
   display:flex; flex-direction:column; align-items:center; text-align:center;
 }
-.ov-rule { width:100%; height:1px; margin-bottom:0; }
-.filter-minimal .ov-rule { background:rgba(0,0,0,0.25); }
-.filter-dark .ov-rule { background:rgba(255,255,255,0.3); }
-
-
-.ov-rule-top { width:100%; height:1px; margin-bottom:0.7rem; }
-.filter-minimal .ov-rule-top { background:rgba(0,0,0,0.18); }
-.filter-dark .ov-rule-top { background:rgba(255,255,255,0.2); }
-
-
-.ov-wordmark { display:flex; justify-content:center; margin-bottom:0.55rem; }
-.ov-wordmark .wordmark-svg { width:58vw; max-width:290px; height:auto; color:currentColor; }
-
-.ov-thin-rule { width:min(55vw,240px); height:1px; margin:0 auto 0.5rem; }
-.filter-minimal .ov-thin-rule { background:rgba(0,0,0,0.22); }
-.filter-dark .ov-thin-rule { background:rgba(255,255,255,0.28); }
-
-.ov-rextreme-label {
-  font-family:var(--display); font-size:0.85rem; font-weight:700;
-  letter-spacing:0.32em; text-transform:uppercase; opacity:0.72; margin-bottom:0.45rem;
+.ov-brand-name {
+  font-family:var(--display); font-size:clamp(1.1rem,5.5vw,1.6rem); font-weight:800;
+  letter-spacing:0.55em; text-transform:uppercase; color:#111;
+  margin-bottom:0.15rem; padding-right:-0.55em;
 }
-.ov-race-label {
-  font-family:var(--serif); font-style:italic; font-size:0.72rem;
-  letter-spacing:0.2em; opacity:0.65; margin-bottom:0;
+.ov-brand-sub {
+  font-family:var(--display); font-size:clamp(0.62rem,2.8vw,0.82rem); font-weight:700;
+  letter-spacing:0.35em; text-transform:uppercase; color:var(--gold);
+  margin-bottom:0.3rem;
+}
+.ov-top-rule {
+  width:min(50vw,200px); height:1px; background:rgba(0,0,0,0.12); margin:0.2rem auto 0;
 }
 
 /* Middle */
 .ov-middle {
-  flex:1; position:relative; padding:0.8rem 1.3rem 0;
-  display:flex; align-items:flex-start;
+  flex:1; position:relative; padding:0 5%;
+  display:flex; align-items:flex-start; justify-content:space-between;
 }
-.ov-tagline {
-  font-family:"Manrope",sans-serif; font-size:clamp(2.2rem,9vw,3.2rem);
-  font-weight:800; line-height:1.15; letter-spacing:0.05em;
+.ov-tagline-left {
+  position:absolute; left:5%; top:0.6rem;
+  font-family:var(--display); font-size:clamp(1.6rem,7.5vw,2.6rem);
+  font-weight:800; line-height:1.12; letter-spacing:0.04em; color:#111;
 }
-.filter-dark .ov-tagline { text-shadow:0 1px 14px rgba(0,0,0,0.55); }
 .ov-info-right {
-  position:absolute; right:1.3rem;
-  text-align:right; font-weight:700;
+  position:absolute; right:5%; text-align:right;
 }
-.ov-info-right.has-record { top:1rem; }
-.ov-info-right:not(.has-record) { bottom:20%; font-size:0.9rem; letter-spacing:0.14em; line-height:1.65; }
-.filter-dark .ov-info-right { text-shadow:0 1px 8px rgba(0,0,0,0.5); }
-.ov-finish-time { font-family:var(--sans); font-size:clamp(1.8rem,7vw,2.6rem); font-weight:900; letter-spacing:0.03em; line-height:1.1; }
-.ov-cat { font-size:0.85rem; font-weight:700; letter-spacing:0.1em; opacity:0.82; margin-top:0.15rem; }
-.ov-name { font-size:0.8rem; font-weight:600; letter-spacing:0.06em; opacity:0.72; margin-top:0.1rem; }
-.ov-date { font-family:var(--sans); font-size:0.78rem; font-weight:700; letter-spacing:0.1em; opacity:0.68; margin-top:0.5rem; font-variant-numeric:tabular-nums; }
-.ov-venue { font-size:0.74rem; font-weight:500; letter-spacing:0.05em; opacity:0.58; }
+.ov-info-right.has-record { top:0.6rem; }
+.ov-info-right:not(.has-record) { top:0.6rem; }
+
+.ov-finish-time {
+  font-family:var(--sans); font-size:clamp(1.8rem,8vw,2.8rem);
+  font-weight:900; letter-spacing:0.02em; line-height:1.05; color:#111;
+}
+.ov-cat {
+  font-family:var(--display); font-size:0.72rem; font-weight:700;
+  letter-spacing:0.12em; opacity:0.65; margin-top:0.2rem; color:#111;
+}
+.ov-rec-name {
+  font-family:var(--display); font-size:0.68rem; font-weight:600;
+  letter-spacing:0.06em; opacity:0.55; margin-top:0.1rem; color:#111;
+}
+.ov-right-venue {
+  font-family:var(--sans); font-size:0.6rem; font-weight:600;
+  letter-spacing:0.1em; opacity:0.45; margin-top:0.4rem; color:#111;
+}
+.ov-right-date {
+  font-family:var(--sans); font-size:0.58rem; font-weight:700;
+  letter-spacing:0.08em; opacity:0.5; color:#111;
+  font-variant-numeric:tabular-nums;
+}
+.ov-right-default {
+  font-family:var(--display); font-size:0.7rem; font-weight:600;
+  letter-spacing:0.12em; opacity:0.4; line-height:1.6; color:#111;
+}
 
 /* Bottom */
-.ov-bottom { padding:0 1.3rem 0.8rem; }
-.ov-bottom-rule { height:1px; margin-bottom:0.65rem; }
-.filter-minimal .ov-bottom-rule { background:rgba(0,0,0,0.22); }
-.filter-dark .ov-bottom-rule { background:rgba(255,255,255,0.28); }
-
-.ov-race-name {
-  font-family:var(--serif); font-style:italic; font-size:1rem;
-  font-weight:400; letter-spacing:0.04em; margin-bottom:0.15rem;
+.ov-bottom {
+  padding:0 5% calc(0.5rem);
 }
-
+.ov-bottom-content {
+  display:flex; justify-content:space-between; align-items:flex-end;
+}
+.ov-bottom-left { max-width:60%; }
 .ov-tagline-bottom {
-  font-family:var(--serif); font-style:italic; font-size:0.82rem;
-  font-weight:400; line-height:1.55; opacity:0.7; margin-bottom:0.55rem;
+  font-family:var(--serif); font-style:italic; font-size:clamp(0.68rem,2.8vw,0.82rem);
+  font-weight:400; line-height:1.5; opacity:0.55; margin-bottom:0.3rem; color:#111;
 }
 .ov-hashtags {
-  font-family:var(--sans); font-size:0.58rem; font-weight:500;
-  letter-spacing:0.08em; opacity:0.5; line-height:1.4; margin-bottom:0.55rem;
+  font-family:var(--sans); font-size:0.48rem; font-weight:500;
+  letter-spacing:0.06em; opacity:0.35; line-height:1.4; color:#111;
+  margin-bottom:0.3rem;
 }
-.ov-logo-row { display:flex; align-items:center; justify-content:space-between; }
-.ov-logo-left { display:flex; flex-direction:column; gap:2px; }
-.ov-logo-left .wordmark-svg { width:120px; height:auto; color:currentColor; }
-.ov-logo-sub { font-size:0.6rem; letter-spacing:0.22em; opacity:0.7; margin-top:1px; }
+.ov-logo-bottom { display:flex; align-items:center; gap:0.4rem; }
+.ov-logo-bottom .wordmark-svg { width:80px; height:auto; color:#111; opacity:0.5; }
+.ov-logo-bottom .ov-icon-mark { width:18px; height:18px; color:#111; opacity:0.4; }
 
-.ov-icon-mark { width:32px; height:32px; color:currentColor; opacity:0.75; }
+.ov-bottom-right { text-align:right; }
+.ov-venue-label {
+  font-family:var(--display); font-size:clamp(0.52rem,2.2vw,0.68rem);
+  font-weight:700; letter-spacing:0.14em; opacity:0.55; color:#111;
+}
+.ov-date-label {
+  font-family:var(--sans); font-size:clamp(0.72rem,3.2vw,0.95rem);
+  font-weight:800; letter-spacing:0.08em; color:#111; opacity:0.7;
+  font-variant-numeric:tabular-nums;
+}
+.ov-year-label {
+  font-family:var(--sans); font-size:clamp(0.58rem,2.5vw,0.75rem);
+  font-weight:700; letter-spacing:0.15em; color:var(--gold); opacity:0.8;
+}
+.ov-bottom-rule {
+  width:100%; height:1px; background:rgba(0,0,0,0.1); margin-bottom:0.5rem;
+}
 
-.ov-bottom-rule-foot { height:1px; margin-top:0.65rem; }
-.filter-minimal .ov-bottom-rule-foot { background:rgba(0,0,0,0.18); }
-.filter-dark .ov-bottom-rule-foot { background:rgba(255,255,255,0.2); }
-
-
-/* ── FILTER TOGGLE (top-right) ── */
+/* ── FILTER TOGGLE ── */
 .filter-btns {
-  position:absolute; top:calc(3.4rem + env(safe-area-inset-top,0px)); right:1rem; z-index:12;
-  display:flex; flex-direction:column; gap:0.35rem;
+  position:absolute; top:calc(var(--safe-top) + 0.8rem); right:0.8rem; z-index:12;
+  display:flex; flex-direction:column; gap:0.3rem;
 }
 .filter-btn {
-  background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.28);
-  color:#fff; padding:0.28rem 0.6rem; font-size:0.52rem;
-  font-family:var(--sans); font-weight:700; letter-spacing:0.16em;
-  cursor:pointer; transition:all 0.2s; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  background:rgba(255,255,255,0.65); border:1px solid rgba(0,0,0,0.1);
+  color:#333; padding:0.25rem 0.55rem; font-size:0.48rem;
+  font-family:var(--sans); font-weight:700; letter-spacing:0.14em;
+  cursor:pointer; transition:all 0.2s; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   pointer-events:auto;
 }
-.filter-btn.active { background:#fff; color:#000; border-color:#fff; }
+.filter-btn.active { background:#111; color:#fff; border-color:#111; }
 .filter-btn:active { transform:scale(0.94); }
+
+/* ── SEGMENTATION LOADING ── */
+#segLoading {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:15; display:none; flex-direction:column; align-items:center; gap:0.6rem;
+  color:#888; font-size:0.7rem; font-family:var(--display); letter-spacing:0.1em;
+}
+#segLoading .loading { border-top-color:#888; }
 
 /* ── CONTROLS ── */
 #controlsBar {
   position:absolute; bottom:0; left:0; right:0; z-index:10;
   display:flex; align-items:center; justify-content:space-around;
-  padding:1rem 1.5rem; padding-bottom:calc(1.2rem + var(--safe-bottom));
-  background:linear-gradient(to top,rgba(0,0,0,0.48) 0%,transparent 100%);
+  padding:0.8rem 1.5rem; padding-bottom:calc(1rem + var(--safe-bottom));
+  background:linear-gradient(to top,rgba(228,228,228,0.9) 0%,transparent 100%);
 }
 #captureBtn {
-  width:70px; height:70px; border-radius:50%;
-  border:3.5px solid rgba(255,255,255,0.9); background:transparent;
+  width:66px; height:66px; border-radius:50%;
+  border:3px solid #111; background:transparent;
   cursor:pointer; position:relative; transition:transform 0.15s;
 }
 #captureBtn::after {
   content:""; position:absolute; inset:4px; border-radius:50%;
-  background:rgba(255,255,255,0.9); transition:transform 0.15s;
+  background:#111; transition:transform 0.15s;
 }
 #captureBtn:active { transform:scale(0.88); }
 #captureBtn:active::after { transform:scale(0.84); }
 #flipBtn,#recordBtn {
-  width:44px; height:44px; border-radius:50%; border:none;
-  background:rgba(255,255,255,0.14); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
-  color:#fff; font-size:1.15rem; cursor:pointer;
+  width:42px; height:42px; border-radius:50%; border:none;
+  background:rgba(0,0,0,0.08); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  color:#333; font-size:1.1rem; cursor:pointer;
   display:flex; align-items:center; justify-content:center; transition:transform 0.3s;
 }
 #flipBtn:active { transform:rotate(180deg); }
-#recordBtn.has-data { background:#fff; color:#000; }
+#recordBtn.has-data { background:#111; color:#fff; }
 
 /* ── RECORD PANEL ── */
 #recordPanel {
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:40;
-  background:rgba(8,8,8,0.94); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
-  border-top:1px solid rgba(255,255,255,0.09);
+  background:rgba(255,255,255,0.96); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  border-top:1px solid rgba(0,0,0,0.08);
   padding:1.5rem 1.5rem calc(1.5rem + var(--safe-bottom));
   border-radius:18px 18px 0 0; max-height:78vh; overflow-y:auto;
   transform:translateY(100%); transition:transform 0.32s ease;
 }
 #recordPanel.open { display:block; transform:translateY(0); }
 #recordPanel .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
-#recordPanel .panel-title { color:#fff; font-size:0.82rem; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; }
-#recordPanel .panel-close { background:none; border:none; color:#666; font-size:1.5rem; cursor:pointer; }
+#recordPanel .panel-title { color:#111; font-size:0.82rem; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; }
+#recordPanel .panel-close { background:none; border:none; color:#999; font-size:1.5rem; cursor:pointer; }
 .record-field { margin-bottom:0.9rem; }
-.record-field label { display:block; color:#666; font-size:0.64rem; font-weight:600; letter-spacing:0.14em; margin-bottom:0.35rem; text-transform:uppercase; }
+.record-field label { display:block; color:#888; font-size:0.64rem; font-weight:600; letter-spacing:0.14em; margin-bottom:0.35rem; text-transform:uppercase; }
 .record-field input,.record-field select {
-  width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.13);
-  color:#fff; padding:0.6rem 0.75rem; font-size:0.92rem; font-family:var(--sans);
+  width:100%; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.1);
+  color:#111; padding:0.6rem 0.75rem; font-size:0.92rem; font-family:var(--sans);
   border-radius:6px; outline:none; transition:border-color 0.2s;
 }
-.record-field input:focus,.record-field select:focus { border-color:rgba(255,255,255,0.5); }
+.record-field input:focus,.record-field select:focus { border-color:rgba(0,0,0,0.3); }
 .record-field select { -webkit-appearance:none; appearance:none; }
-.record-field select option { background:#111; color:#fff; }
+.record-field select option { background:#fff; color:#111; }
 .time-inputs { display:flex; align-items:center; gap:0.3rem; }
 .time-inputs input { width:68px; text-align:center; font-size:1.7rem; font-weight:900; padding:0.45rem 0.25rem; letter-spacing:0.04em; }
-.time-inputs .sep { color:#555; font-size:1.7rem; font-weight:900; }
+.time-inputs .sep { color:#ccc; font-size:1.7rem; font-weight:900; }
 .record-actions { display:flex; gap:0.5rem; margin-top:1.1rem; }
 .record-actions button {
   flex:1; padding:0.72rem; font-size:0.8rem; font-weight:700; letter-spacing:0.14em;
   border:none; border-radius:6px; cursor:pointer; font-family:var(--sans);
 }
-#recordApplyBtn { background:#fff; color:#000; }
-#recordClearBtn { background:rgba(255,255,255,0.09); color:#888; }
+#recordApplyBtn { background:#111; color:#fff; }
+#recordClearBtn { background:rgba(0,0,0,0.06); color:#888; }
 
 /* ── REVIEW ── */
 #reviewScreen {
-  display:none; position:fixed; inset:0; z-index:50; background:#080808;
+  display:none; position:fixed; inset:0; z-index:50; background:#f5f5f5;
   flex-direction:column; align-items:center; justify-content:center; gap:0;
 }
-#reviewImage { max-width:90%; max-height:70vh; object-fit:contain; box-shadow:0 10px 50px rgba(0,0,0,0.7); }
+#reviewImage { max-width:90%; max-height:70vh; object-fit:contain; box-shadow:0 4px 30px rgba(0,0,0,0.12); }
 .review-actions {
   display:flex; gap:0.75rem; margin-top:1.4rem;
   padding-bottom:calc(0.5rem + var(--safe-bottom));
@@ -303,18 +322,18 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
   letter-spacing:0.2em; cursor:pointer; transition:opacity 0.2s; font-family:var(--sans);
 }
 .review-btn:active { opacity:0.65; }
-.review-btn.share-save { background:#fff; color:#000; }
+.review-btn.share-save { background:#111; color:#fff; }
 .review-btn.download-btn {
-  background:transparent; color:rgba(255,255,255,0.65);
-  border:1px solid rgba(255,255,255,0.25); padding:0.85rem 1.3rem;
+  background:transparent; color:rgba(0,0,0,0.5);
+  border:1px solid rgba(0,0,0,0.15); padding:0.85rem 1.3rem;
 }
-.review-btn.retake { background:transparent; color:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.2); }
+.review-btn.retake { background:transparent; color:rgba(0,0,0,0.4); border:1px solid rgba(0,0,0,0.12); }
 
 /* ── MISC ── */
 .flash { position:fixed; inset:0; background:#fff; z-index:60; animation:flashAnim 0.32s ease-out forwards; pointer-events:none; }
 @keyframes flashAnim { 0%{opacity:0.85} 100%{opacity:0} }
 #exportCanvas { display:none; }
-.loading { display:inline-block; width:22px; height:22px; border:2.5px solid rgba(0,0,0,0.15); border-top-color:rgba(0,0,0,0.7); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
+.loading { display:inline-block; width:22px; height:22px; border:2.5px solid rgba(0,0,0,0.1); border-top-color:rgba(0,0,0,0.5); border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; }
 @keyframes spin { to{transform:rotate(360deg)} }
 </style>
 </head>
@@ -324,13 +343,11 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
      LANDING / PERMISSION SCREEN
 ════════════════════════════════════════ -->
 <div id="permissionScreen">
-
   <nav class="landing-nav">
     <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
     <span class="nav-label">Race Day Filter</span>
   </nav>
 
-  <!-- HERO (simple centered) -->
   <section class="landing-hero">
     <svg class="hero-icon-mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="currentColor"/>
@@ -348,7 +365,6 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
     </div>
     <p class="hero-bottom-mark">DARIMATI.US &nbsp;·&nbsp; Race Day Filter</p>
   </section>
-
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -357,55 +373,63 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 <div id="app">
   <div id="viewfinder">
     <video id="cameraVideo" autoplay playsinline muted></video>
+    <canvas id="displayCanvas"></canvas>
+  </div>
+
+  <!-- SEGMENTATION LOADING -->
+  <div id="segLoading">
+    <span class="loading"></span>
+    <span>LOADING MODEL...</span>
   </div>
 
   <!-- EDITORIAL OVERLAY -->
   <div id="overlayLayer">
+    <div class="ov-frame-border"></div>
 
-    <!-- TOP: rule + wordmark + rule + race label -->
+    <!-- TOP -->
     <div class="ov-section ov-top">
-      <div class="ov-rule-top"></div>
-      <div class="ov-wordmark">
-        <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
-      </div>
-      <p class="ov-rextreme-label">REXTREME</p>
-      <div class="ov-thin-rule"></div>
-      <p class="ov-race-label" id="ovRaceLabel">2026. 08. 01 &nbsp;·&nbsp; 수원컨벤션센터</p>
+      <div class="ov-brand-name">D A R I M A T I</div>
+      <div class="ov-brand-sub">REXTREME</div>
+      <div class="ov-top-rule"></div>
     </div>
 
-    <!-- MIDDLE: tagline + info right -->
+    <!-- MIDDLE -->
     <div class="ov-section ov-middle">
-      <div class="ov-tagline">RUN.<br>YOUR.<br>CITY.</div>
+      <div class="ov-tagline-left">RUN.<br>YOUR.<br>CITY.</div>
       <div class="ov-info-right" id="ovInfoRight">
-        <span id="ovDateDisplay"></span><br>SEOUL
+        <div class="ov-right-default" id="ovDefaultInfo">08.01<br>2026</div>
       </div>
     </div>
 
-    <!-- BOTTOM: editorial content + logos -->
+    <!-- BOTTOM -->
     <div class="ov-section ov-bottom">
       <div class="ov-bottom-rule"></div>
-      <div class="ov-race-name" id="ovRaceName" style="display:none"></div>
-      <p class="ov-tagline-bottom">The bridge between<br>you and the road.</p>
-      <p class="ov-hashtags">#DARIMATI &nbsp; #REXTREME &nbsp; #렉스트림 &nbsp; #다리마티</p>
-      <div class="ov-logo-row">
-        <div class="ov-logo-left">
-          <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
-          <span class="ov-logo-sub">다리마티</span>
+      <div class="ov-bottom-content">
+        <div class="ov-bottom-left">
+          <p class="ov-tagline-bottom">The bridge between<br>you and the road.</p>
+          <p class="ov-hashtags">#DARIMATI &nbsp; #REXTREME &nbsp; #렉스트림 &nbsp; #다리마티</p>
+          <div class="ov-logo-bottom">
+            <svg class="wordmark-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 226 33"><path fill="currentColor" d="M.01 0h14.75c11.71 0 16.59 5.64 16.59 15.78s-6.19 16.76-16.87 16.76H0V0zm9.76 7.97v16.59h4.01c5.7 0 7.87-2.6 7.87-8.79s-2.17-7.81-8.08-7.81h-3.8zM52.59 26.62h-10.9l-1.63 5.91H30.03L40.55 0h13.56l10.52 32.53H54.16zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM79.42 22.5h-3.58v10.03h-9.76V0h14.97c8.57 0 13.34 3.63 13.34 11.44 0 4.77-2.06 7.86-5.53 9.54l7.43 10.95v.6H84.96L79.43 22.5zM75.84 8.13v7.27h4.66c3.2 0 4.23-1.14 4.23-3.64 0-2.66-1.36-3.63-4.39-3.63zM98.38 32.53V0h9.76v32.53zM121.53 32.53h-8.95V0h15.62l2.92 10.84c.54 2 1.41 5.86 2.22 9.81h.71c.75-3.96 1.68-8.02 2.22-10.19L139.04 0h14.42v32.53h-9.77V20.6c0-4.12.22-8.73.38-12.74h-.71c-.97 4.39-2.17 9.38-3.74 14.53l-2.61 8.57h-8.78l-2.49-8.84c-1.52-5.42-2.66-9.98-3.63-14.26h-.71c.11 4.01.11 8.62.11 12.74v11.93zM177.47 26.62h-10.9l-1.63 5.91h-10.03L165.43 0h13.56l10.52 32.53h-10.47zm-8.95-6.99h7.05l-1.08-4.01c-.66-2.44-1.3-4.88-1.85-7.26h-1.09c-.6 2.39-1.25 4.83-1.9 7.26l-1.14 4.01zM185.59 0h26.89v8.95h-8.56v23.59h-9.77V8.95h-8.56zM215.35 32.53V0h9.76v32.53z"/></svg>
+            <svg class="ov-icon-mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="currentColor"/>
+              <path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="currentColor"/>
+              <path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="currentColor"/>
+            </svg>
+          </div>
         </div>
-        <svg class="ov-icon-mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M59.6 10.54H0V21.87H59.6V10.54Z" fill="currentColor"/>
-          <path d="M59.6 31.19H0V42.52H59.6V31.19Z" fill="currentColor"/>
-          <path d="M4.41003 0H17.51L52.97 53.18H39.75L4.41003 0Z" fill="currentColor"/>
-        </svg>
+        <div class="ov-bottom-right" id="ovBottomRight">
+          <div class="ov-venue-label" id="ovVenueLabel">수원컨벤션센터</div>
+          <div class="ov-date-label" id="ovDateLabel">08.01</div>
+          <div class="ov-year-label" id="ovYearLabel">2026</div>
+        </div>
       </div>
-      <div class="ov-bottom-rule-foot"></div>
     </div>
   </div>
 
-  <!-- FILTER TOGGLE (top-right) -->
+  <!-- FILTER TOGGLE -->
   <div class="filter-btns" id="filterBtnsBar">
-    <button class="filter-btn active" data-filter="minimal">MINIMAL</button>
-    <button class="filter-btn" data-filter="dark">DARK</button>
+    <button class="filter-btn active" data-filter="clean">CLEAN</button>
+    <button class="filter-btn" data-filter="gray">GRAY</button>
   </div>
 
   <!-- CONTROLS -->
@@ -478,6 +502,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#000;
 
 <canvas id="exportCanvas" width="1080" height="1920"></canvas>
 
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
 <script>
 (function() {
 'use strict';
@@ -489,8 +516,6 @@ var WM_SVG  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 226 33"><pat
 
 function svgToImg(template, color) {
   return new Promise(function(resolve) {
-    var s = template.replace(/__C__/g, encodeURIComponent(color));
-    // use data URI to avoid CORS issues on iOS
     var s2 = template.replace(/__C__/g, color);
     var b64 = btoa(unescape(encodeURIComponent(s2)));
     var img = new Image();
@@ -506,6 +531,8 @@ var permMsg      = document.getElementById('permMsg');
 var startBtn     = document.getElementById('startCameraBtn');
 var app          = document.getElementById('app');
 var video        = document.getElementById('cameraVideo');
+var displayCanvas = document.getElementById('displayCanvas');
+var displayCtx   = displayCanvas.getContext('2d');
 var captureBtn   = document.getElementById('captureBtn');
 var flipBtn      = document.getElementById('flipBtn');
 var recordBtn    = document.getElementById('recordBtn');
@@ -518,13 +545,15 @@ var reviewImage  = document.getElementById('reviewImage');
 var retakeBtn    = document.getElementById('retakeBtn');
 var shareBtn     = document.getElementById('shareBtn');
 var downloadBtn  = document.getElementById('downloadBtn');
-var canvas       = document.getElementById('exportCanvas');
-var ctx          = canvas.getContext('2d');
-var ovDateDisp   = document.getElementById('ovDateDisplay');
+var exportCanvas = document.getElementById('exportCanvas');
+var exportCtx    = exportCanvas.getContext('2d');
 var ovInfoRight  = document.getElementById('ovInfoRight');
-var ovRaceName   = document.getElementById('ovRaceName');
-var ovRaceLabel  = document.getElementById('ovRaceLabel');
+var ovDefaultInfo = document.getElementById('ovDefaultInfo');
+var ovVenueLabel = document.getElementById('ovVenueLabel');
+var ovDateLabel  = document.getElementById('ovDateLabel');
+var ovYearLabel  = document.getElementById('ovYearLabel');
 var filterBtns   = document.querySelectorAll('.filter-btn');
+var segLoading   = document.getElementById('segLoading');
 var timeH = document.getElementById('timeH');
 var timeM = document.getElementById('timeM');
 var timeS = document.getElementById('timeS');
@@ -536,34 +565,29 @@ var recVenue = document.getElementById('recordVenue');
 
 // ── STATE ──
 var stream       = null;
-var facingMode   = 'environment';
-var isFront      = false;
-var filter       = 'minimal';
+var facingMode   = 'user';
+var isFront      = true;
+var bgColor      = '#FFFFFF';
 var record       = null;
 var capturedBlob = null;
+var lastMask     = null;
+var lastImage    = null;
+var segReady     = false;
+var mpCamera     = null;
+var selfieSegmentation = null;
 
-var SANS   = '"Geist Sans","Geist",-apple-system,BlinkMacSystemFont,sans-serif';
-var SERIF  = '"DM Serif Display",Georgia,serif';
+var SANS    = '"Geist Sans","Geist",-apple-system,BlinkMacSystemFont,sans-serif';
+var SERIF   = '"DM Serif Display",Georgia,serif';
 var MANROPE = '"Manrope",' + SANS;
-
-// ── DATE ──
-var today  = new Date();
-var YEAR   = today.getFullYear();
-var dateStr = '2026.08.01';
-if (ovDateDisp) ovDateDisp.textContent = dateStr;
-if (ovRaceLabel) ovRaceLabel.textContent = '2026. 08. 01 \u00b7 \uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
-
-// ── LANDING ──
+var GOLD    = '#C8A44E';
 
 // ── FILTER TOGGLE ──
-app.classList.add('filter-minimal');
 filterBtns.forEach(function(btn) {
   btn.addEventListener('click', function() {
     filterBtns.forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
-    filter = btn.dataset.filter;
-    app.className = 'filter-' + filter;
-    app.style.display = 'block';
+    if (btn.dataset.filter === 'clean') bgColor = '#FFFFFF';
+    else bgColor = '#F0F0F0';
   });
 });
 
@@ -619,68 +643,174 @@ recordClearBtn.addEventListener('click', function() {
 });
 
 function updateOverlay() {
-  var displayDate = (record && record.raceDate) ? record.raceDate : dateStr;
-  var displayVenue = (record && record.venue) ? record.venue : '\uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
+  var displayVenue = (record && record.venue) ? record.venue : '수원컨벤션센터';
+  var displayDate = (record && record.raceDate) ? record.raceDate : '2026.08.01';
+  // Parse date for display
+  var dateParts = displayDate.replace(/[-.\/\s]/g, '.').split('.');
+  var dateShort = dateParts.length >= 2 ? dateParts.slice(-2,-1)[0] + '.' + dateParts.slice(-1)[0] : displayDate;
+  var yearPart = dateParts.length >= 3 ? dateParts[0] : '2026';
+
+  // Update bottom right
+  ovVenueLabel.textContent = displayVenue;
+  ovDateLabel.textContent = dateShort;
+  ovYearLabel.textContent = yearPart;
+
   if (record && record.time) {
     ovInfoRight.classList.add('has-record');
     ovInfoRight.innerHTML =
       '<div class="ov-finish-time">' + record.time + '</div>' +
       '<div class="ov-cat">' + record.category + '</div>' +
-      (record.name ? '<div class="ov-name">' + record.name + '</div>' : '') +
-      '<div class="ov-date">' + displayDate + '</div>' +
-      '<div class="ov-venue">' + displayVenue + '</div>';
-    ovRaceName.textContent = record.race;
-    ovRaceName.style.display = 'block';
-    ovRaceLabel.textContent = record.raceDate + ' \u00b7 ' + displayVenue;
+      (record.name ? '<div class="ov-rec-name">' + record.name + '</div>' : '') +
+      '<div class="ov-right-venue">' + displayVenue + '</div>';
   } else if (record) {
     ovInfoRight.classList.remove('has-record');
-    ovInfoRight.innerHTML = '<div class="ov-date">' + displayDate + '</div><div class="ov-venue">' + displayVenue + '</div>';
-    ovRaceName.textContent = record.race;
-    ovRaceName.style.display = 'block';
-    ovRaceLabel.textContent = record.raceDate + ' \u00b7 ' + displayVenue;
+    ovInfoRight.innerHTML = '<div class="ov-right-default">' + dateShort + '<br>' + yearPart + '</div>';
   } else {
     ovInfoRight.classList.remove('has-record');
-    ovInfoRight.innerHTML = '<span id="ovDateDisplay">' + dateStr + '</span><br>SEOUL';
-    ovRaceName.style.display = 'none';
-    ovRaceLabel.textContent = '2026. 08. 01 \u00b7 \uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
+    ovInfoRight.innerHTML = '<div class="ov-right-default">08.01<br>2026</div>';
   }
+}
+
+// ── MEDIAPIPE SEGMENTATION ──
+function initSegmentation() {
+  segLoading.style.display = 'flex';
+
+  selfieSegmentation = new SelfieSegmentation({
+    locateFile: function(file) {
+      return 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/' + file;
+    }
+  });
+  selfieSegmentation.setOptions({
+    modelSelection: 1,
+    selfieMode: true
+  });
+  selfieSegmentation.onResults(onSegResults);
+
+  // Initialize with camera
+  mpCamera = new Camera(video, {
+    onFrame: async function() {
+      if (selfieSegmentation) {
+        await selfieSegmentation.send({image: video});
+      }
+    },
+    width: 720,
+    height: 1280,
+    facingMode: facingMode
+  });
+  mpCamera.start().then(function() {
+    isFront = facingMode === 'user';
+    segLoading.style.display = 'none';
+    segReady = true;
+  }).catch(function(err) {
+    console.error('Camera start failed', err);
+    segLoading.style.display = 'none';
+    // Fallback: just show raw video on canvas
+    fallbackRawVideo();
+  });
+}
+
+function onSegResults(results) {
+  lastMask = results.segmentationMask;
+  lastImage = results.image;
+
+  var cw = displayCanvas.width;
+  var ch = displayCanvas.height;
+
+  displayCtx.save();
+  displayCtx.clearRect(0, 0, cw, ch);
+
+  // Mirror for front camera
+  if (isFront) {
+    displayCtx.translate(cw, 0);
+    displayCtx.scale(-1, 1);
+  }
+
+  // Draw the segmentation mask
+  displayCtx.drawImage(results.segmentationMask, 0, 0, cw, ch);
+
+  // Draw only the person where the mask is opaque
+  displayCtx.globalCompositeOperation = 'source-in';
+  displayCtx.drawImage(results.image, 0, 0, cw, ch);
+
+  // Draw background behind the person
+  displayCtx.globalCompositeOperation = 'destination-over';
+  displayCtx.fillStyle = bgColor;
+  displayCtx.fillRect(0, 0, cw, ch);
+
+  displayCtx.restore();
+}
+
+function fallbackRawVideo() {
+  // If MediaPipe fails, just draw raw video frames
+  function drawRaw() {
+    if (video.readyState >= 2) {
+      var cw = displayCanvas.width;
+      var ch = displayCanvas.height;
+      displayCtx.save();
+      if (isFront) { displayCtx.translate(cw, 0); displayCtx.scale(-1, 1); }
+
+      var vw = video.videoWidth, vh = video.videoHeight;
+      var va = vw/vh, ca = cw/ch;
+      var sx, sy, sw, sh;
+      if (va > ca) { sh=vh; sw=vh*ca; sx=(vw-sw)/2; sy=0; }
+      else { sw=vw; sh=vw/ca; sx=0; sy=(vh-sh)/2; }
+      displayCtx.drawImage(video, sx,sy,sw,sh, 0,0,cw,ch);
+      displayCtx.restore();
+    }
+    requestAnimationFrame(drawRaw);
+  }
+  drawRaw();
+}
+
+// Set canvas dimensions based on viewport
+function resizeDisplayCanvas() {
+  var container = document.getElementById('viewfinder');
+  var w = container.clientWidth;
+  var h = container.clientHeight;
+  // Use 9:16 aspect for canvas internal resolution
+  displayCanvas.width = 720;
+  displayCanvas.height = 1280;
 }
 
 // ── CAMERA ──
-startBtn.addEventListener('click', initCamera);
-
-async function initCamera() {
+startBtn.addEventListener('click', function() {
   startBtn.innerHTML = '<span class="loading"></span>';
-  try {
-    var s = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingMode, width:{ideal:1920}, height:{ideal:1920} }, audio: false
-    });
-    stream = s; video.srcObject = s;
-    isFront = facingMode === 'user';
-    video.classList.toggle('front', isFront);
-    await video.play();
-    permScreen.style.display = 'none';
-    app.style.display = 'block';
-  } catch(err) {
-    console.error(err);
-    permMsg.textContent = '카메라 접근이 거부되었습니다. 설정에서 카메라 권한을 허용해 주세요.';
-    permMsg.classList.add('error');
-    startBtn.textContent = 'RETRY';
-  }
-}
+  permScreen.style.display = 'none';
+  app.style.display = 'block';
+  resizeDisplayCanvas();
+  initSegmentation();
+});
 
 flipBtn.addEventListener('click', async function() {
   facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  if (stream) stream.getTracks().forEach(function(t){t.stop();});
-  try {
-    var s = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingMode, width:{ideal:1920}, height:{ideal:1920} }, audio: false
-    });
-    stream = s; video.srcObject = s;
-    isFront = facingMode === 'user';
-    video.classList.toggle('front', isFront);
-    await video.play();
-  } catch(err) { console.error('Flip failed', err); }
+  isFront = facingMode === 'user';
+
+  // Stop existing camera
+  if (mpCamera) {
+    mpCamera.stop();
+  }
+  if (stream) {
+    stream.getTracks().forEach(function(t) { t.stop(); });
+  }
+
+  // Restart with new facing mode
+  segLoading.style.display = 'flex';
+  mpCamera = new Camera(video, {
+    onFrame: async function() {
+      if (selfieSegmentation) {
+        await selfieSegmentation.send({image: video});
+      }
+    },
+    width: 720,
+    height: 1280,
+    facingMode: facingMode
+  });
+  mpCamera.start().then(function() {
+    segLoading.style.display = 'none';
+  }).catch(function(err) {
+    console.error('Flip failed', err);
+    segLoading.style.display = 'none';
+  });
 });
 
 // ── CAPTURE ──
@@ -689,8 +819,8 @@ captureBtn.addEventListener('click', async function() {
   flash.className = 'flash';
   document.body.appendChild(flash);
   setTimeout(function(){flash.remove();}, 380);
-  await renderCanvas();
-  capturedBlob = await new Promise(function(res) { canvas.toBlob(res, 'image/jpeg', 0.92); });
+  await renderExportCanvas();
+  capturedBlob = await new Promise(function(res) { exportCanvas.toBlob(res, 'image/jpeg', 0.93); });
   reviewImage.src = URL.createObjectURL(capturedBlob);
   reviewScreen.style.display = 'flex';
 });
@@ -698,7 +828,8 @@ captureBtn.addEventListener('click', async function() {
 // ── SHARE / DOWNLOAD ──
 shareBtn.addEventListener('click', async function() {
   if (!capturedBlob) return;
-  var fname = 'DARIMATI_' + dateStr.replace(/\./g,'') + '.jpg';
+  var dStr = (record && record.raceDate) ? record.raceDate.replace(/\./g,'') : '20260801';
+  var fname = 'DARIMATI_' + dStr + '.jpg';
   var file = new File([capturedBlob], fname, { type: 'image/jpeg' });
   if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
@@ -710,15 +841,14 @@ shareBtn.addEventListener('click', async function() {
       return;
     } catch(err) {
       if (err.name === 'AbortError') return;
-      // fall through to download
     }
   }
   triggerDownload(fname);
 });
 
 downloadBtn.addEventListener('click', function() {
-  var fname = 'DARIMATI_' + dateStr.replace(/\./g,'') + '.jpg';
-  triggerDownload(fname);
+  var dStr = (record && record.raceDate) ? record.raceDate.replace(/\./g,'') : '20260801';
+  triggerDownload('DARIMATI_' + dStr + '.jpg');
 });
 
 function triggerDownload(fname) {
@@ -734,200 +864,254 @@ retakeBtn.addEventListener('click', function() {
   if (capturedBlob) { URL.revokeObjectURL(reviewImage.src); capturedBlob = null; }
 });
 
-// ── CANVAS RENDER ──
-async function loadSerifFont() {
-  if (document.fonts && document.fonts.check('12px "DM Serif Display"')) return;
-  try {
-    var f = new FontFace('DM Serif Display',
-      'url(https://fonts.gstatic.com/s/dmserifdisp/v15/u-445m0j-o-oXZFokMVkFtHY4paa.woff2) format("woff2")', {style:'normal',weight:'400'});
-    var fi = new FontFace('DM Serif Display',
-      'url(https://fonts.gstatic.com/s/dmserifdisp/v15/u-445m0j-o-oXZFokMVkFtHY4paa.woff2) format("woff2")', {style:'italic',weight:'400'});
-    await Promise.all([f.load(), fi.load()]);
-    document.fonts.add(f); document.fonts.add(fi);
-    await document.fonts.ready;
-  } catch(e) { console.warn('DM Serif font load failed', e); }
+// ── FONT LOADING ──
+async function loadFonts() {
+  if (document.fonts) {
+    try {
+      var f1 = new FontFace('DM Serif Display',
+        'url(https://fonts.gstatic.com/s/dmserifdisp/v15/u-445m0j-o-oXZFokMVkFtHY4paa.woff2) format("woff2")', {style:'normal',weight:'400'});
+      var f2 = new FontFace('DM Serif Display',
+        'url(https://fonts.gstatic.com/s/dmserifdisp/v15/u-445m0j-o-oXZFokMVkFtHY4paa.woff2) format("woff2")', {style:'italic',weight:'400'});
+      await Promise.all([f1.load(), f2.load()]);
+      document.fonts.add(f1); document.fonts.add(f2);
+      await document.fonts.ready;
+    } catch(e) { console.warn('Font load failed', e); }
+  }
 }
 
-async function renderCanvas() {
-  await loadSerifFont();
+function hline(c, x1, y, x2) {
+  c.beginPath(); c.moveTo(x1, y); c.lineTo(x2, y); c.stroke();
+}
+
+// Safe letterSpacing setter (not supported in all browsers)
+function setLetterSpacing(c, val) {
+  try { c.letterSpacing = val; } catch(e) {}
+}
+function resetLetterSpacing(c) {
+  try { setLetterSpacing(c, '0px'); } catch(e) {}
+}
+
+// ── EXPORT CANVAS RENDER (1080x1920) ──
+async function renderExportCanvas() {
+  await loadFonts();
   var W = 1080, H = 1920;
-  canvas.width = W; canvas.height = H;
+  exportCanvas.width = W; exportCanvas.height = H;
+  var c = exportCtx;
 
-  // Draw video frame
-  var vw = video.videoWidth || W, vh = video.videoHeight || H;
-  var va = vw/vh, ca = W/H;
-  var sx,sy,sw,sh;
-  if (va > ca) { sh=vh; sw=vh*ca; sx=(vw-sw)/2; sy=0; }
-  else { sw=vw; sh=vw/ca; sx=0; sy=(vh-sh)/2; }
-  ctx.save();
-  if (isFront) { ctx.translate(W,0); ctx.scale(-1,1); }
-  ctx.drawImage(video, sx,sy,sw,sh, 0,0,W,H);
-  ctx.restore();
+  // ── COMPOSITE: white bg + person (using last mask) ──
+  c.save();
+  c.clearRect(0, 0, W, H);
 
-  // Filter overlay
-  if (filter === 'minimal') {
-    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0,0,W,H);
-  } else if (filter === 'dark') {
-    var g1 = ctx.createRadialGradient(W/2,H/2,H*0.15,W/2,H/2,H*0.72);
-    g1.addColorStop(0,'rgba(0,0,0,0.03)'); g1.addColorStop(1,'rgba(0,0,0,0.58)');
-    ctx.fillStyle = g1; ctx.fillRect(0,0,W,H);
-  }
+  if (lastMask && lastImage) {
+    // Create temp canvas for compositing at export res
+    var tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = W; tmpCanvas.height = H;
+    var tmpCtx = tmpCanvas.getContext('2d');
 
-  // Color palette per filter
-  var tc, lc, ac; // text, line, accent
-  if (filter === 'minimal') { tc='#111111'; lc='rgba(0,0,0,0.22)'; ac='#111111'; }
-  else { tc='#f0f0f0'; lc='rgba(255,255,255,0.3)'; ac='#f0f0f0'; }
-  var brandC = tc;
+    tmpCtx.save();
+    if (isFront) { tmpCtx.translate(W, 0); tmpCtx.scale(-1, 1); }
 
-  // ── Padding ──
-  var px = 72, py = 0;
+    // Draw mask
+    tmpCtx.drawImage(lastMask, 0, 0, W, H);
+    // Person only where mask is
+    tmpCtx.globalCompositeOperation = 'source-in';
+    tmpCtx.drawImage(lastImage, 0, 0, W, H);
+    // Background behind
+    tmpCtx.globalCompositeOperation = 'destination-over';
+    tmpCtx.fillStyle = bgColor;
+    tmpCtx.fillRect(0, 0, W, H);
 
-  // ── TOP RULE ──
-  py = 110;
-  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
-  ctx.lineWidth = 1.5;
-  hline(px, py, W-px);
+    tmpCtx.restore();
 
-  // ── WORDMARK ──
-  py = 155;
-  var wmImg = await svgToImg(WM_SVG, brandC);
-  if (wmImg) {
-    var wmW = 640, wmH = wmW*(33/226);
-    ctx.drawImage(wmImg, (W-wmW)/2, py, wmW, wmH);
-    py += wmH;
-  }
-
-  // ── REXTREME LABEL ──
-  py += 16;
-  ctx.fillStyle = tc; ctx.globalAlpha = 0.72;
-  ctx.font = '700 40px ' + MANROPE;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  ctx.letterSpacing = '0.32em';
-  ctx.fillText('REXTREME', W/2, py);
-  ctx.globalAlpha = 1;
-  py += 50;
-
-  // ── THIN RULE BELOW ──
-  ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
-  hline((W-500)/2, py, (W+500)/2);
-  py += 22;
-
-  // ── RACE DAY LABEL (serif italic) ──
-  ctx.fillStyle = tc; ctx.globalAlpha = 0.62;
-  ctx.font = 'italic 400 36px ' + SERIF;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  var canvasRaceDate = (record && record.raceDate) ? record.raceDate : '2026. 08. 01';
-  var canvasVenue = (record && record.venue) ? record.venue : '\uc218\uc6d0\ucee8\ubca4\uc158\uc13c\ud130';
-  ctx.fillText(canvasRaceDate + ' \u00b7 ' + canvasVenue, W/2, py);
-  ctx.globalAlpha = 1;
-  py += 60;
-
-  // ── TAGLINE: RUN. YOUR. CITY. ──
-  var tagY = py + 10;
-  if (filter === 'dark') { ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=18; }
-  ctx.fillStyle = tc; ctx.font = '800 118px ' + MANROPE;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  ctx.fillText('RUN.', px, tagY);
-  ctx.fillText('YOUR.', px, tagY + 140);
-  ctx.fillText('CITY.', px, tagY + 280);
-  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
-
-  // ── RIGHT INFO ──
-  ctx.textAlign = 'right';
-  if (filter === 'dark') { ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=12; }
-
-  if (record && record.time) {
-    // Finish time
-    ctx.fillStyle = tc; ctx.font = '900 84px ' + SANS;
-    ctx.fillText(record.time, W-px, tagY + 18);
-    // Category (serif)
-    ctx.font = 'italic 400 44px ' + SERIF;
-    ctx.fillText(record.category, W-px, tagY + 118);
-    // Name
-    if (record.name) {
-      ctx.font = '600 38px ' + MANROPE; ctx.globalAlpha = 0.78;
-      ctx.fillText(record.name, W-px, tagY + 185);
-      ctx.globalAlpha = 1;
-    }
-    // Date + venue lower right
-    var infoY = tagY + 380;
-    ctx.font = '700 46px ' + SANS; ctx.globalAlpha = 0.72;
-    ctx.fillText(record.raceDate || dateStr, W-px, infoY);
-    ctx.font = '500 36px ' + MANROPE; ctx.globalAlpha = 0.56;
-    ctx.fillText(record.venue, W-px, infoY+62);
-    ctx.globalAlpha = 1;
+    // Draw composited result
+    c.drawImage(tmpCanvas, 0, 0, W, H);
   } else {
-    var infoY2 = tagY + 370;
-    var dDate = record && record.raceDate ? record.raceDate : dateStr;
-    ctx.fillStyle = tc; ctx.font = '700 52px ' + SANS; ctx.globalAlpha = 0.72;
-    ctx.fillText(dDate, W-px, infoY2);
-    var venueTxt = record ? record.venue : 'SEOUL';
-    ctx.font = '500 40px ' + MANROPE; ctx.globalAlpha = 0.55;
-    ctx.fillText(venueTxt, W-px, infoY2+66);
-    ctx.globalAlpha = 1;
+    // Fallback: draw raw video
+    c.fillStyle = bgColor;
+    c.fillRect(0, 0, W, H);
+    var vw = video.videoWidth || W, vh = video.videoHeight || H;
+    var va = vw/vh, ca = W/H;
+    var sx,sy,sw,sh;
+    if (va > ca) { sh=vh; sw=vh*ca; sx=(vw-sw)/2; sy=0; }
+    else { sw=vw; sh=vw/ca; sx=0; sy=(vh-sh)/2; }
+    c.save();
+    if (isFront) { c.translate(W,0); c.scale(-1,1); }
+    c.drawImage(video, sx,sy,sw,sh, 0,0,W,H);
+    c.restore();
   }
-  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+  c.restore();
 
-  // ── BOTTOM SECTION ──
-  var botBase = H - 480;
+  // ── Frame border ──
+  var frameL = Math.round(W * 0.035);
+  var frameT = Math.round(H * 0.018);
+  var frameR = W - frameL;
+  var frameB = H - Math.round(H * 0.015);
+  c.strokeStyle = 'rgba(0,0,0,0.12)';
+  c.lineWidth = 2;
+  c.strokeRect(frameL, frameT, frameR - frameL, frameB - frameT);
+
+  // ── TOP: D A R I M A T I ──
+  var px = Math.round(W * 0.05);
+  var py = frameT + 58;
+
+  c.fillStyle = '#111';
+  c.font = '800 52px ' + MANROPE;
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  // Manually space out DARIMATI
+  var brandText = 'D A R I M A T I';
+  setLetterSpacing(c, '0.15em');
+  c.fillText(brandText, W/2, py);
+  py += 62;
+
+  // REXTREME in gold
+  c.fillStyle = GOLD;
+  c.font = '700 34px ' + MANROPE;
+  setLetterSpacing(c, '0.35em');
+  c.fillText('REXTREME', W/2, py);
+  py += 48;
 
   // Thin rule
-  ctx.strokeStyle = lc; ctx.lineWidth = 1.5;
-  hline(px, botBase, px + 340);
-  botBase += 38;
+  c.strokeStyle = 'rgba(0,0,0,0.12)';
+  c.lineWidth = 1.5;
+  hline(c, W/2 - 160, py, W/2 + 160);
+  py += 30;
 
-  // Race name (serif italic)
-  if (record && record.race) {
-    ctx.fillStyle = tc;
-    ctx.font = 'italic 400 54px ' + SERIF;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText(record.race, px, botBase);
-    botBase += 72;
+  // ── LEFT: RUN. YOUR. CITY. ──
+  var tagY = py + 20;
+  c.fillStyle = '#111';
+  c.font = '800 96px ' + MANROPE;
+  c.textAlign = 'left';
+  c.textBaseline = 'top';
+  setLetterSpacing(c, '0.04em');
+  c.fillText('RUN.', px + 10, tagY);
+  c.fillText('YOUR.', px + 10, tagY + 112);
+  c.fillText('CITY.', px + 10, tagY + 224);
+
+  // ── RIGHT: Finish time / info ──
+  c.textAlign = 'right';
+  var rx = W - px - 10;
+  var displayVenue = (record && record.venue) ? record.venue : '수원컨벤션센터';
+  var displayDate = (record && record.raceDate) ? record.raceDate : '2026.08.01';
+  var dateParts = displayDate.replace(/[-.\/\s]/g, '.').split('.');
+  var dateShort = dateParts.length >= 2 ? dateParts.slice(-2,-1)[0] + '.' + dateParts.slice(-1)[0] : displayDate;
+  var yearPart = dateParts.length >= 3 ? dateParts[0] : '2026';
+
+  if (record && record.time) {
+    // Big finish time
+    c.fillStyle = '#111';
+    c.font = '900 88px ' + SANS;
+    setLetterSpacing(c, '0.02em');
+    c.fillText(record.time, rx, tagY + 10);
+
+    // Category
+    c.font = '700 36px ' + MANROPE;
+    c.globalAlpha = 0.65;
+    setLetterSpacing(c, '0.12em');
+    c.fillText(record.category, rx, tagY + 115);
+    c.globalAlpha = 1;
+
+    // Name
+    if (record.name) {
+      c.font = '600 32px ' + MANROPE;
+      c.globalAlpha = 0.55;
+      setLetterSpacing(c, '0.06em');
+      c.fillText(record.name, rx, tagY + 165);
+      c.globalAlpha = 1;
+    }
+
+    // Venue small
+    c.font = '600 26px ' + SANS;
+    c.globalAlpha = 0.45;
+    setLetterSpacing(c, '0.1em');
+    c.fillText(displayVenue, rx, tagY + 250);
+    c.globalAlpha = 1;
+  } else {
+    // Default: date + year
+    c.fillStyle = '#111';
+    c.font = '700 48px ' + MANROPE;
+    c.globalAlpha = 0.4;
+    setLetterSpacing(c, '0.1em');
+    c.fillText(dateShort, rx, tagY + 20);
+    c.fillText(yearPart, rx, tagY + 78);
+    c.globalAlpha = 1;
   }
 
-  // Editorial tagline (serif italic)
-  ctx.fillStyle = tc; ctx.globalAlpha = 0.72;
-  ctx.font = 'italic 400 46px ' + SERIF;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  ctx.fillText('The bridge between', px, botBase);
-  ctx.fillText('you and the road.', px, botBase+60);
-  ctx.globalAlpha = 1;
-  botBase += 138;
-
-  // Hashtags
-  ctx.fillStyle = tc; ctx.globalAlpha = 0.45;
-  ctx.font = '500 26px ' + SANS; ctx.textAlign = 'left';
-  ctx.fillText('#DARIMATI  #REXTREME  #렉스트림  #다리마티', px, botBase);
-  ctx.globalAlpha = 1;
-  botBase += 54;
-
-  // Logo row
-  var logoY = H - 110;
-  var logoColor = tc;
-  var logoWm = await svgToImg(WM_SVG, logoColor);
-  if (logoWm) {
-    var lW = 300, lH = lW*(33/226);
-    ctx.drawImage(logoWm, px, logoY - lH, lW, lH);
-  }
-  // Sub label
-  ctx.fillStyle = logoColor; ctx.globalAlpha = 0.7;
-  ctx.font = '400 28px ' + SANS; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  ctx.fillText('다리마티', px, logoY + 4);
-  ctx.globalAlpha = 1;
-
-  // Icon mark (right)
-  var iconImg = await svgToImg(ICON_SVG, logoColor);
-  if (iconImg) { ctx.globalAlpha=0.75; ctx.drawImage(iconImg, W-px-72, logoY-54, 72, 72); ctx.globalAlpha=1; }
+  // ── BOTTOM SECTION ──
+  var botY = H - 240;
 
   // Bottom rule
-  ctx.strokeStyle = filter === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)';
-  ctx.lineWidth = 1.5;
-  hline(px, H-38, W-px);
+  c.strokeStyle = 'rgba(0,0,0,0.1)';
+  c.lineWidth = 1.5;
+  hline(c, px, botY, W - px);
+  botY += 28;
+
+  // Left: tagline + hashtags + logo
+  c.textAlign = 'left';
+  c.fillStyle = '#111';
+  c.globalAlpha = 0.55;
+  c.font = 'italic 400 36px ' + SERIF;
+  setLetterSpacing(c, '0.02em');
+  c.fillText('The bridge between', px, botY);
+  c.fillText('you and the road.', px, botY + 48);
+  c.globalAlpha = 1;
+  botY += 108;
+
+  // Hashtags
+  c.globalAlpha = 0.35;
+  c.font = '500 22px ' + SANS;
+  setLetterSpacing(c, '0.06em');
+  c.fillText('#DARIMATI  #REXTREME  #렉스트림  #다리마티', px, botY);
+  c.globalAlpha = 1;
+  botY += 38;
+
+  // Logo wordmark (left)
+  var logoWm = await svgToImg(WM_SVG, '#111111');
+  if (logoWm) {
+    c.globalAlpha = 0.5;
+    var lW = 200, lH = lW*(33/226);
+    c.drawImage(logoWm, px, botY, lW, lH);
+    c.globalAlpha = 1;
+  }
+  // Icon mark next to wordmark
+  var iconImg = await svgToImg(ICON_SVG, '#111111');
+  if (iconImg) {
+    c.globalAlpha = 0.4;
+    c.drawImage(iconImg, px + 210, botY - 2, 28, 28);
+    c.globalAlpha = 1;
+  }
+
+  // Right: venue + date + year
+  c.textAlign = 'right';
+  c.fillStyle = '#111';
+
+  c.font = '700 28px ' + MANROPE;
+  c.globalAlpha = 0.55;
+  setLetterSpacing(c, '0.14em');
+  c.fillText(displayVenue, rx, botY - 56);
+  c.globalAlpha = 1;
+
+  c.font = '800 42px ' + SANS;
+  c.globalAlpha = 0.7;
+  setLetterSpacing(c, '0.08em');
+  c.fillText(dateShort, rx, botY - 22);
+  c.globalAlpha = 1;
+
+  c.font = '700 32px ' + SANS;
+  c.fillStyle = GOLD;
+  c.globalAlpha = 0.8;
+  setLetterSpacing(c, '0.15em');
+  c.fillText(yearPart, rx, botY + 22);
+  c.globalAlpha = 1;
+
+  // Reset
+  setLetterSpacing(c, '0px');
 }
 
-function hline(x1, y, x2) {
-  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
-}
+// ── RESIZE HANDLER ──
+window.addEventListener('resize', function() {
+  if (app.style.display !== 'none') resizeDisplayCanvas();
+});
 
 })();
 </script>
