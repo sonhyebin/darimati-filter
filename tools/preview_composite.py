@@ -14,7 +14,8 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-SIDE_FADE = 0.055   # keep in sync with index.html
+SIDE_FADE = 0.055    # keep in sync with index.html
+PERSON_FIT = 0.92    # keep in sync with index.html
 
 OUT_DIR = "/private/tmp/claude-501/-Users-sonhyebin-Desktop---------/95b69dfb-508b-45ae-afac-348f39d7726a/scratchpad"
 
@@ -102,13 +103,13 @@ def composite(key, record, person):
     st = d["stage"]
     sx, sy = st["x"] * W, st["y"] * H
     sw, sh = st["w"] * W, st["h"] * H
-    scale = max(sw / person.width, sh / person.height)
+    scale = PERSON_FIT * min(sw / person.width, sh / person.height)
     dw, dh = person.width * scale, person.height * scale
-    dx, dy = sx + (sw - dw) / 2, sy          # top-anchored, centred
 
     stage = Image.new("RGBA", (int(round(sw)), int(round(sh))), (0, 0, 0, 0))
+    # centred horizontally, standing on the box floor
     stage.alpha_composite(person.resize((int(round(dw)), int(round(dh))), Image.LANCZOS),
-                          (int(round((sw - dw) / 2)), 0))
+                          (int(round((sw - dw) / 2)), int(round(sh - dh))))
 
     # soften the vertical edges (SIDE_FADE in index.html)
     edge = max(1.0, SIDE_FADE * stage.width)

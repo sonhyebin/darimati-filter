@@ -705,6 +705,10 @@ function buildPersonLayer(image, rawMask) {
    bottom stays a hard cut — that is the floor line the person stands on. */
 var SIDE_FADE = 0.055;
 
+// contain-fit margin: the whole camera frame stays inside the box with a
+// little air, however the shot is framed
+var PERSON_FIT = 0.92;
+
 function buildStageLayer(person, sw, sh) {
   if (stageCanvas.width !== sw || stageCanvas.height !== sh) {
     stageCanvas.width = sw; stageCanvas.height = sh;
@@ -714,11 +718,10 @@ function buildStageLayer(person, sw, sh) {
   c.globalCompositeOperation = 'source-over';
   c.clearRect(0, 0, sw, sh);
 
-  var scale = Math.max(sw / person.width, sh / person.height);
+  var scale = PERSON_FIT * Math.min(sw / person.width, sh / person.height);
   var dw = person.width * scale, dh = person.height * scale;
-  // centred horizontally, anchored to the top so heads survive and the crop
-  // falls at the floor line instead
-  c.drawImage(person, (sw - dw) / 2, 0, dw, dh);
+  // centred horizontally, standing on the box floor
+  c.drawImage(person, (sw - dw) / 2, sh - dh, dw, dh);
 
   c.globalCompositeOperation = 'destination-in';
   var g = c.createLinearGradient(0, 0, sw, 0);
