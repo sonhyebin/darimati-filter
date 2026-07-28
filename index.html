@@ -427,28 +427,6 @@ var LEGACY_SEG   = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/
 // native resolution instead
 var PREVIEW_LONG_EDGE = 900;
 
-// mask post-processing works at this width; the raw model output is only
-// 256px wide anyway, so going higher just burns CPU
-var MASK_W = 256;
-
-// canvas filter() only landed in Safari 18 — without it the feather pass is a
-// no-op, so widen the alpha ramp instead of shipping a hard die-cut edge
-var CTX_FILTER_OK = (function() {
-  var c = document.createElement('canvas').getContext('2d');
-  try { c.filter = 'blur(1px)'; } catch (e) { return false; }
-  return c.filter === 'blur(1px)';
-})();
-var MASK_LO = CTX_FILTER_OK ? 100 : 78;
-var MASK_HI = CTX_FILTER_OK ? 160 : 188;
-
-// tasks-mask band: confidence below LO is background, above HI solid person.
-// The band sits high on purpose — it trims the halo of background colour the
-// model mixes into edge pixels, which is what makes a cutout look dirty.
-var TASK_LO = 0.35, TASK_HI = 0.70;
-// temporal smoothing of the confidence mask (weight of the newest frame):
-// stops edge flicker and fills one-frame dropouts
-var EMA_NEW = 0.6;
-
 var DEMO = /[?&]demo\b/.test(location.search);
 
 /* ══════════════════════════════════════════
@@ -499,24 +477,15 @@ var currentFrame   = 'ribbon';
 var record         = { time:null, category:'개인전', name:'' };
 var capturedBlob   = null;
 var stream         = null;
-var segMode        = 'none';    // 'tasks' | 'legacy' | 'none'
-var taskSegmenter  = null;
-var selfieSegmentation = null;
-var maskEMA        = null;
+// Kirakira-style architecture: the live preview never segments — the models
+// run only on the frozen still at capture time, with a fallback chain
+var taskSegmenter  = null;      // capture engine, preferred
+var selfieSegmentation = null;  // capture engine, fallback
 var lastVideoTs    = 0;         // segmentForVideo needs strictly increasing timestamps
-var emptyStreak    = 0;
-var demoting       = false;
 var hqBusy         = false;     // capture-time refine in progress — live loop pauses
 var legacyStillCb  = null;      // one-shot intercept of the legacy onResults handler
-var taskProbe      = false;     // tasks ready while legacy runs — must prove itself live
-var probeTries     = 0;
-var probeCountdown = 0;
 
-// the model gets a canvas copy of the frame, never the video element —
-// iOS Safari can silently fail to texture-upload live video
-var segInput    = document.createElement('canvas');
-var segInputCtx = segInput.getContext('2d');
-// ?seg=tasks|legacy|none forces a segmenter (debugging aid)
+// ?seg=tasks|legacy|none forces a capture engine (debugging aid)
 var segForceMatch  = location.search.match(/[?&]seg=(tasks|legacy|none)\b/);
 var segForce       = segForceMatch ? segForceMatch[1] : null;
 var shutterDelay   = 0;
@@ -544,11 +513,10 @@ var capturedPerson = document.createElement('canvas');
 var capturedPersonCtx = capturedPerson.getContext('2d');
 var reviewing = false;
 
-// person bounding box in the camera frame ({x0,y0,x1,y1} fractions, smoothed
-// over time so the live preview doesn't wobble), and its frozen capture copy
+// person bounding box ({x0,y0,x1,y1} fractions) — computed on the captured
+// still only; live preview has no box and contain-fits
 var personBox = null;
 var capturedPersonBox = null;
-var lastMaskBox = null;
 // JPEG encoding is async and can be slow; the generation counter stops a stale
 // encode from overwriting a newer one when edits come in quick succession
 var exportGen = 0;
@@ -556,11 +524,6 @@ var exportGen = 0;
 // the cutout fitted into the current frame's stage rect
 var stageCanvas = document.createElement('canvas');
 var stageCtx    = stageCanvas.getContext('2d');
-
-var maskCanvas = document.createElement('canvas');
-var maskCtx    = maskCanvas.getContext('2d', { willReadFrequently:true });
-var blurCanvas = document.createElement('canvas');
-var blurCtx    = blurCanvas.getContext('2d');
 
 /* ══════════════════════════════════════════
    ASSET LOADING
@@ -713,124 +676,16 @@ recordClearBtn.addEventListener('click', function() {
 });
 
 /* ══════════════════════════════════════════
-   MASK REFINEMENT
+   LIVE FRAME
 
-   Runs at MASK_W instead of full camera resolution: the model only emits a
-   256px-wide mask, so the extra pixels carry no information and the per-pixel
-   JS loop is what costs frames on a phone.
+   No live segmentation: the preview shows the camera as-is (mirrored for the
+   front camera). The cutout happens only at capture time, on the still.
 ══════════════════════════════════════════ */
-function refineMask(rawMask, aspect) {
-  var mw = MASK_W;
-  var mh = Math.max(1, Math.round(MASK_W / aspect));
-
-  if (maskCanvas.width !== mw || maskCanvas.height !== mh) {
-    maskCanvas.width = mw; maskCanvas.height = mh;
-    blurCanvas.width = mw; blurCanvas.height = mh;
-  }
-
-  maskCtx.clearRect(0, 0, mw, mh);
-  maskCtx.drawImage(rawMask, 0, 0, mw, mh);
-
-  var imageData = maskCtx.getImageData(0, 0, mw, mh);
-  var data = imageData.data;
-  var span = MASK_HI - MASK_LO;
-  var minX = mw, minY = mh, maxX = -1, maxY = -1;
-  for (var i = 3; i < data.length; i += 4) {
-    var a = data[i];
-    if (a >= MASK_HI) data[i] = 255;
-    else if (a <= MASK_LO) data[i] = 0;
-    else data[i] = ((a - MASK_LO) / span * 255) | 0;
-    if (data[i] > 127) {
-      var p = i >> 2, x = p % mw, y = (p / mw) | 0;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
-    }
-  }
-  maskCtx.putImageData(imageData, 0, 0);
-
-  // person bounding box — anything shorter than ~12% of the frame is noise
-  lastMaskBox = (maxY - minY) > mh * 0.12
-    ? { x0: minX / mw, y0: minY / mh, x1: (maxX + 1) / mw, y1: (maxY + 1) / mh }
-    : null;
-
-  if (!CTX_FILTER_OK) return maskCanvas;
-
-  // soften the cut so the silhouette does not look die-cut
-  blurCtx.clearRect(0, 0, mw, mh);
-  blurCtx.filter = 'blur(1px)';
-  blurCtx.drawImage(maskCanvas, 0, 0);
-  blurCtx.filter = 'none';
-  return blurCanvas;
-}
-
-/* Tasks-segmenter mask: float background-confidence → person alpha.
-   EMA over time, then a high smoothstep band — a crisp anti-aliased edge that
-   also sheds the background-colour fringe. */
-function refineTaskMask(mpMask) {
-  var mw = mpMask.width, mh = mpMask.height;
-  var f = mpMask.getAsFloat32Array();   // confidence of BACKGROUND (category 0)
-
-  var first = !maskEMA || maskEMA.length !== f.length;
-  if (first) maskEMA = new Float32Array(f.length);
-
-  if (maskCanvas.width !== mw || maskCanvas.height !== mh) {
-    maskCanvas.width = mw; maskCanvas.height = mh;
-    blurCanvas.width = mw; blurCanvas.height = mh;
-  }
-
-  var imageData = maskCtx.createImageData(mw, mh);
-  var data = imageData.data;
-  var span = TASK_HI - TASK_LO;
-  var minX = mw, minY = mh, maxX = -1, maxY = -1;
-
-  for (var i = 0; i < f.length; i++) {
-    var v = 1 - f[i];
-    var e = first ? v : maskEMA[i] + (v - maskEMA[i]) * EMA_NEW;
-    maskEMA[i] = e;
-    var t = (e - TASK_LO) / span;
-    t = t < 0 ? 0 : t > 1 ? 1 : t;
-    t = t * t * (3 - 2 * t);            // smoothstep
-    var a = (t * 255) | 0;
-    data[(i << 2) + 3] = a;
-    if (a > 127) {
-      var x = i % mw, y = (i / mw) | 0;
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
-    }
-  }
-  maskCtx.putImageData(imageData, 0, 0);
-
-  lastMaskBox = (maxY - minY) > mh * 0.12
-    ? { x0: minX / mw, y0: minY / mh, x1: (maxX + 1) / mw, y1: (maxY + 1) / mh }
-    : null;
-
-  if (!CTX_FILTER_OK) return maskCanvas;
-  blurCtx.clearRect(0, 0, mw, mh);
-  blurCtx.filter = 'blur(1px)';
-  blurCtx.drawImage(maskCanvas, 0, 0);
-  blurCtx.filter = 'none';
-  return blurCanvas;
-}
-
-/* ══════════════════════════════════════════
-   PERSON LAYER
-══════════════════════════════════════════ */
-/* `mask` is a ready-to-composite alpha canvas (from refineMask/refineTaskMask),
-   or null for the raw-video fallback. */
-function buildPersonLayer(image, mask) {
+function buildLiveFrame(image) {
   var vw = image.width  || video.videoWidth;
   var vh = image.height || video.videoHeight;
   if (!vw || !vh) return false;
 
-  if (personCanvas.width !== vw || personCanvas.height !== vh) {
-    personCanvas.width = vw; personCanvas.height = vh;
-  }
-
-  // keep the plain frame too, for the overlay filters
   if (rawCanvas.width !== vw || rawCanvas.height !== vh) {
     rawCanvas.width = vw; rawCanvas.height = vh;
   }
@@ -839,39 +694,16 @@ function buildPersonLayer(image, mask) {
   rawCtx.drawImage(image, 0, 0, vw, vh);
   rawCtx.setTransform(1, 0, 0, 1, 0, 0);
 
+  // the box filters preview the plain frame inside the box
+  if (personCanvas.width !== vw || personCanvas.height !== vh) {
+    personCanvas.width = vw; personCanvas.height = vh;
+  }
   personCtx.setTransform(1, 0, 0, 1, 0, 0);
-  personCtx.globalCompositeOperation = 'source-over';
   personCtx.clearRect(0, 0, vw, vh);
+  personCtx.drawImage(rawCanvas, 0, 0);
 
-  // front camera is mirrored so the preview behaves like a mirror
-  if (isFront) personCtx.setTransform(-1, 0, 0, 1, vw, 0);
-
-  if (mask) {
-    personCtx.drawImage(mask, 0, 0, vw, vh);
-    personCtx.globalCompositeOperation = 'source-in';
-  }
-  personCtx.drawImage(image, 0, 0, vw, vh);
-
-  personCtx.setTransform(1, 0, 0, 1, 0, 0);
-  personCtx.globalCompositeOperation = 'source-over';
   personReady = true;
-
-  // smooth the detected box over time so the framing doesn't wobble
-  var raw = (mask && lastMaskBox)
-    ? { x0: lastMaskBox.x0, y0: lastMaskBox.y0, x1: lastMaskBox.x1, y1: lastMaskBox.y1, mirrored: isFront }
-    : null;
-  if (raw && personBox && personBox.mirrored === raw.mirrored) {
-    var k = 0.3;
-    personBox = {
-      x0: personBox.x0 + (raw.x0 - personBox.x0) * k,
-      y0: personBox.y0 + (raw.y0 - personBox.y0) * k,
-      x1: personBox.x1 + (raw.x1 - personBox.x1) * k,
-      y1: personBox.y1 + (raw.y1 - personBox.y1) * k,
-      mirrored: raw.mirrored
-    };
-  } else {
-    personBox = raw;
-  }
+  personBox = null;   // live framing is contain-fit; the still computes a real box
   return true;
 }
 
@@ -1245,12 +1077,12 @@ function openStream() {
   }
   if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
   return navigator.mediaDevices.getUserMedia({
-    video: { facingMode: facingMode, width:{ ideal:720 }, height:{ ideal:960 } },
+    // no live segmentation to feed, so ask for a sharper still
+    video: { facingMode: facingMode, width:{ ideal:1080 }, height:{ ideal:1440 } },
     audio: false
   }).then(function(s) {
     stream = s;
     isFront = facingMode === 'user';
-    maskEMA = null;      // stale mask/box would ghost across a camera flip
     personBox = null;
     video.srcObject = s;
     return video.play();
@@ -1294,22 +1126,19 @@ function initLegacySegmenter() {
       return 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/' + file;
     }
   });
-  // 0 = general (256×256) — better vertical detail for portrait selfies than the
-  // landscape model. Mirroring is handled in buildPersonLayer, not here.
+  // 0 = general (256×256) — better vertical detail for portrait stills
   selfieSegmentation.setOptions({ modelSelection: 0, selfieMode: false });
+  // only ever answers still-capture requests
   selfieSegmentation.onResults(function(results) {
-    if (legacyStillCb) {
-      var cb = legacyStillCb;
-      legacyStillCb = null;
-      cb(results.segmentationMask);
-      return;
-    }
-    var img = results.image;
-    var aspect = (img.width || video.videoWidth) / (img.height || video.videoHeight || 1);
-    buildPersonLayer(img, refineMask(results.segmentationMask, aspect));
-    renderPreview();
-    flushCapture();
+    if (!legacyStillCb) return;
+    var cb = legacyStillCb;
+    legacyStillCb = null;
+    cb(results.segmentationMask);
   });
+  // pull the model down now, not on the first shutter press
+  if (selfieSegmentation.initialize) {
+    selfieSegmentation.initialize().catch(function() {});
+  }
 }
 
 function withTimeout(promise, ms) {
@@ -1318,10 +1147,8 @@ function withTimeout(promise, ms) {
   })]);
 }
 
-/* Both segmenters start in parallel. The small legacy model brings the live
-   cutout up fast and is the reliable baseline; the multiclass Tasks model only
-   takes over after producing a real mask on this device's live frames — iOS
-   has passed init and then failed exactly there. */
+/* Both capture engines load in the background while the user frames the shot.
+   Neither runs live — like Kirakira, segmentation happens on the still. */
 async function initSegmentation() {
   if (segForce === 'none') { console.info('[seg] forced: none'); return; }
 
@@ -1329,156 +1156,31 @@ async function initSegmentation() {
     (typeof SelfieSegmentation === 'undefined' ? loadScript(LEGACY_SEG) : Promise.resolve())
       .then(function() {
         initLegacySegmenter();
-        if (segMode === 'none') {
-          segMode = 'legacy';
-          console.info('[seg] mode: legacy');
-        }
+        console.info('[seg] legacy engine ready');
       })
       .catch(function(err) { console.warn('[seg] legacy init failed', err); });
   }
 
   if (segForce === 'legacy' || !window.__importModule) return;
-  var seg = null;
   try {
-    seg = await withTimeout(initTasksSegmenter('GPU'), 12000);
-    console.info('[seg] tasks ready (GPU)');
+    taskSegmenter = await withTimeout(initTasksSegmenter('GPU'), 12000);
+    console.info('[seg] tasks engine ready (GPU)');
   } catch (err) {
     console.warn('[seg] tasks GPU failed', err);
     try {
-      seg = await withTimeout(initTasksSegmenter('CPU'), 12000);
-      console.info('[seg] tasks ready (CPU)');
+      taskSegmenter = await withTimeout(initTasksSegmenter('CPU'), 12000);
+      console.info('[seg] tasks engine ready (CPU)');
     } catch (err2) { console.warn('[seg] tasks CPU failed', err2); }
-  }
-  if (!seg) return;
-  taskSegmenter = seg;
-  if (segMode === 'legacy') {
-    taskProbe = true;
-    probeTries = 0;
-    probeCountdown = 0;
-    console.info('[seg] probing tasks on live frames');
-  } else if (segMode === 'none') {
-    segMode = 'tasks';
-    console.info('[seg] mode: tasks');
-  }
-}
-
-function endProbe(reason) {
-  taskProbe = false;
-  console.warn('[seg] staying on legacy — ' + reason);
-  try { if (taskSegmenter) taskSegmenter.close(); } catch (e) {}
-  taskSegmenter = null;
-}
-
-function onProbeResult(result) {
-  var m = result.confidenceMasks && result.confidenceMasks[0];
-  var ok = false;
-  if (m) {
-    var f = m.getAsFloat32Array();     // background confidence
-    var need = (f.length / 4) * 0.02, n = 0;
-    for (var i = 0; i < f.length; i += 4) {
-      if (f[i] < 0.4 && ++n >= need) { ok = true; break; }
-    }
-  }
-  probeTries++;
-  if (ok) {
-    taskProbe = false;
-    maskEMA = null;
-    segMode = 'tasks';
-    console.info('[seg] mode: tasks (verified on live frames)');
-  } else if (probeTries >= 30) {
-    endProbe('no live mask after ' + probeTries + ' probes');
-  }
-}
-
-/* A runtime failure of the Tasks segmenter must cost the cutout QUALITY, not
-   the cutout itself — drop to the legacy model, never straight to raw video. */
-function demoteFromTasks(err) {
-  if (demoting) return;
-  demoting = true;
-  console.warn('[seg] tasks failed at runtime — demoting to legacy', err);
-  try { if (taskSegmenter) taskSegmenter.close(); } catch (e) {}
-  taskSegmenter = null;
-  taskProbe = false;
-  maskEMA = null;
-  if (selfieSegmentation) {           // already up from the parallel init
-    segMode = 'legacy';
-    console.info('[seg] mode: legacy (demoted)');
-    return;
-  }
-  segMode = 'none';   // raw video only while legacy loads
-  var load = (typeof SelfieSegmentation === 'undefined')
-    ? loadScript(LEGACY_SEG) : Promise.resolve();
-  load.then(function() {
-    initLegacySegmenter();
-    segMode = 'legacy';
-    console.info('[seg] mode: legacy (demoted)');
-  }).catch(function(e) {
-    console.warn('[seg] legacy unavailable — raw video', e);
-    selfieSegmentation = null;
-    segMode = 'none';
-  });
-}
-
-function onTaskResult(result) {
-  var masks = result.confidenceMasks;
-  if (!masks || !masks[0]) return;
-  buildPersonLayer(segInput, refineTaskMask(masks[0]));
-  renderPreview();
-  flushCapture();
-
-  // model runs but never finds anyone → the legacy model may do better on
-  // this device; an actually-empty scene loses nothing by switching
-  if (!lastMaskBox) {
-    if (++emptyStreak > 150) demoteFromTasks(new Error('empty mask for ~150 frames'));
-  } else {
-    emptyStreak = 0;
   }
 }
 
 function startFrameLoop() {
   var warmedUp = false;
-  async function tick() {
+  function tick() {
     if (video.readyState >= 2 && !hqBusy) {
-      // canvas copy of the frame — the model never sees the video element
-      if (segInput.width !== video.videoWidth || segInput.height !== video.videoHeight) {
-        segInput.width = video.videoWidth;
-        segInput.height = video.videoHeight;
-      }
-      segInputCtx.drawImage(video, 0, 0);
-
-      if (segMode === 'tasks' && taskSegmenter) {
-        try {
-          // iOS coarsens performance.now() to 1ms, so two frames can read the
-          // same clock value — segmentForVideo throws unless we keep the
-          // timestamps strictly increasing ourselves
-          var ts = Math.max(lastVideoTs + 1, performance.now());
-          lastVideoTs = ts;
-          // callback form: the result is only valid inside the callback and is
-          // freed automatically afterwards
-          taskSegmenter.segmentForVideo(segInput, ts, onTaskResult);
-        } catch (err) {
-          demoteFromTasks(err);
-        }
-      } else if (segMode === 'legacy' && selfieSegmentation) {
-        if (taskProbe && taskSegmenter && --probeCountdown <= 0) {
-          probeCountdown = 8;
-          try {
-            var pts = Math.max(lastVideoTs + 1, performance.now());
-            lastVideoTs = pts;
-            taskSegmenter.segmentForVideo(segInput, pts, onProbeResult);
-          } catch (perr) { endProbe('probe threw: ' + perr); }
-        }
-        try {
-          await selfieSegmentation.send({ image: segInput });
-        } catch (err) {
-          console.error('[seg] legacy failed at runtime — raw video', err);
-          selfieSegmentation = null; segMode = 'none';
-        }
-      } else {
-        buildPersonLayer(segInput, null);
-        renderPreview();
-        flushCapture();
-      }
+      buildLiveFrame(video);
+      renderPreview();
+      flushCapture();
       if (!warmedUp) { warmedUp = true; segLoading.style.display = 'none'; }
     }
     requestAnimationFrame(tick);
@@ -1497,15 +1199,16 @@ function flushCapture() {
 /* ══════════════════════════════════════════
    CAPTURE-TIME REFINEMENT
 
-   The live preview has to run in real time, so its mask is coarse. The still
-   has no such budget: re-segment the frozen frame, run the model again on a
-   person-crop (the model sees the person larger → tighter boundary), then
-   snap the mask to real image edges with a guided filter.
+   Kirakira architecture: nothing runs live, all quality is spent on the
+   still — re-segment the frozen frame, run the model again on a person-crop
+   (the model sees the person larger → tighter boundary), then snap the mask
+   to real image edges with a guided filter. Engine chain mirrors Kirakira's
+   foreground → person → original: tasks → legacy → no cutout.
 ══════════════════════════════════════════ */
 var HQ_LO = 0.38, HQ_HI = 0.80;
 
-function segmentStill(source) {
-  if (segMode === 'tasks' && taskSegmenter) {
+function segmentStill(source, engine) {
+  if (engine === 'tasks' && taskSegmenter) {
     return new Promise(function(resolve, reject) {
       try {
         var ts = Math.max(lastVideoTs + 1, performance.now());
@@ -1521,7 +1224,7 @@ function segmentStill(source) {
       } catch (e) { reject(e); }
     });
   }
-  if (segMode === 'legacy' && selfieSegmentation) {
+  if (engine === 'legacy' && selfieSegmentation) {
     return new Promise(function(resolve, reject) {
       legacyStillCb = function(mask) {
         var mw = mask.width || 256, mh = mask.height || 256;
@@ -1541,6 +1244,22 @@ function segmentStill(source) {
     });
   }
   return Promise.resolve(null);
+}
+
+/* try tasks first; a broken or empty answer falls through to legacy */
+async function segmentStillBest(source) {
+  var engines = ['tasks', 'legacy'];
+  for (var i = 0; i < engines.length; i++) {
+    var engine = engines[i];
+    try {
+      var m = await withTimeout(segmentStill(source, engine), 8000);
+      if (m && bboxOfFloat(m.f, m.w, m.h, 0.5)) return { mask: m, engine: engine };
+      if (m) console.warn('[seg] ' + engine + ' still mask empty — next engine');
+    } catch (err) {
+      console.warn('[seg] ' + engine + ' still failed — next engine', err);
+    }
+  }
+  return null;
 }
 
 function floatToAlphaCanvas(f, w, h) {
@@ -1645,14 +1364,15 @@ function bboxOfFloat(f, w, h, thr) {
 
 async function captureHQ() {
   if (DEMO || !capturedRaw.width) return;
-  if (segMode !== 'tasks' && segMode !== 'legacy') return;
+  if (!taskSegmenter && !selfieSegmentation) return;
   hqBusy = true;
   try {
     var raw = capturedRaw, W = raw.width, H = raw.height;
 
-    // pass 1: whole still (no temporal smoothing — single clean frame)
-    var m1 = await segmentStill(raw);
-    if (!m1) return;
+    // pass 1: whole still, engine chain — tasks, then legacy
+    var best = await segmentStillBest(raw);
+    if (!best) return;   // no engine produced a person — ship the photo uncut
+    var m1 = best.mask, engine = best.engine;
     var alpha = alphaAtSize(floatToAlphaCanvas(m1.f, m1.w, m1.h), W, H);
 
     // pass 2: person crop — effectively higher mask resolution on the person
@@ -1668,7 +1388,9 @@ async function captureHQ() {
         var cropC = document.createElement('canvas');
         cropC.width = cw; cropC.height = ch;
         cropC.getContext('2d').drawImage(raw, cx0, cy0, cw, ch, 0, 0, cw, ch);
-        var m2 = await segmentStill(cropC);
+        var m2 = null;
+        try { m2 = await withTimeout(segmentStill(cropC, engine), 8000); }
+        catch (e) { console.warn('[seg] crop pass failed — full-frame mask only', e); }
         if (m2) {
           var cropA = alphaAtSize(floatToAlphaCanvas(m2.f, m2.w, m2.h), cw, ch);
           // feathered paste so the crop border never shows
@@ -1712,7 +1434,7 @@ async function captureHQ() {
         if (yy > maxY) maxY = yy;
       }
     }
-    if (maxY <= minY) return;   // nobody found — keep the live cutout
+    if (maxY <= minY) return;   // nobody found — ship the photo uncut
 
     capturedPerson.width = W; capturedPerson.height = H;
     capturedPersonCtx.clearRect(0, 0, W, H);
@@ -1723,7 +1445,7 @@ async function captureHQ() {
     // measured on the already-mirrored still, so no mirror flag
     capturedPersonBox = { x0: minX / W, y0: minY / H, x1: (maxX + 1) / W, y1: (maxY + 1) / H, mirrored: false };
   } catch (err) {
-    console.warn('[seg] capture refine failed — using live cutout', err);
+    console.warn('[seg] capture refine failed — shipping the photo uncut', err);
   } finally {
     hqBusy = false;
   }
@@ -1880,7 +1602,9 @@ captureBtn.addEventListener('click', async function() {
   setTimeout(function(){ flash.remove(); }, 380);
 
   await nextRenderedFrame();
-  await captureHQ();
+  segLoading.style.display = 'flex';     // cutting out the still takes a moment
+  try { await captureHQ(); }
+  finally { segLoading.style.display = 'none'; }
   renderExport(capturedPerson.width ? capturedPerson : null, capturedPersonBox,
                capturedRaw.width ? capturedRaw : null);
 
