@@ -245,35 +245,29 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
 }
 #segLoading .loading { border-top-color:#888; }
 
-/* ── TIMER ── */
-#timerOverlay {
+/* ── SHUTTER TIMER ── */
+#shutterCountdown {
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  z-index:14; display:none; flex-direction:column; align-items:center; gap:0.5rem;
-  pointer-events:auto;
+  z-index:14; display:none; align-items:center; justify-content:center;
+  pointer-events:none;
 }
-#timerDisplay {
-  font-family:var(--sans); font-size:clamp(2.8rem,12vw,4.2rem); font-weight:900;
-  color:#111; letter-spacing:0.04em; font-variant-numeric:tabular-nums;
-  text-shadow:0 1px 12px rgba(255,255,255,0.8);
+#shutterCountdown .countdown-num {
+  font-family:var(--sans); font-size:clamp(5rem,22vw,8rem); font-weight:900;
+  color:#111; letter-spacing:0.02em;
+  text-shadow:0 2px 20px rgba(255,255,255,0.7);
+  animation:countPulse 0.8s ease-out;
+}
+@keyframes countPulse {
+  0% { transform:scale(1.5); opacity:0; }
+  30% { transform:scale(1); opacity:1; }
+  100% { transform:scale(0.95); opacity:0.9; }
+}
+#shutterTimerBadge {
+  position:absolute; top:-6px; right:-6px; min-width:16px; height:16px;
+  background:var(--gold); color:#fff; border-radius:8px;
+  font-size:0.5rem; font-weight:800; font-family:var(--sans);
+  display:none; align-items:center; justify-content:center; padding:0 3px;
   line-height:1;
-}
-.timer-controls {
-  display:flex; gap:0.5rem; align-items:center;
-}
-.timer-ctrl-btn {
-  border:none; padding:0.4rem 1rem; font-size:0.65rem; font-weight:700;
-  letter-spacing:0.14em; cursor:pointer; font-family:var(--sans);
-  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-  transition:all 0.15s;
-}
-.timer-ctrl-btn:active { transform:scale(0.94); }
-#timerStartBtn { background:#111; color:#fff; }
-#timerStartBtn.running { background:#e53e3e; color:#fff; }
-#timerResetBtn { background:rgba(0,0,0,0.08); color:#555; }
-#timerUseBtn { background:var(--gold); color:#fff; display:none; }
-.timer-label {
-  font-family:var(--display); font-size:0.55rem; font-weight:600;
-  letter-spacing:0.2em; color:rgba(0,0,0,0.4); text-transform:uppercase;
 }
 
 /* ── CONTROLS ── */
@@ -302,7 +296,8 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
 }
 #flipBtn:active { transform:rotate(180deg); }
 #recordBtn.has-data { background:#111; color:#fff; }
-#timerBtn.active { background:#e53e3e; color:#fff; }
+#shutterTimerBtn.active { background:#111; color:#fff; }
+#shutterTimerBtn { position:relative; }
 
 /* ── RECORD PANEL ── */
 #recordPanel {
@@ -414,15 +409,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
     <span>LOADING MODEL...</span>
   </div>
 
-  <!-- TIMER OVERLAY -->
-  <div id="timerOverlay">
-    <span class="timer-label">STOPWATCH</span>
-    <div id="timerDisplay">0:00:00</div>
-    <div class="timer-controls">
-      <button class="timer-ctrl-btn" id="timerResetBtn">RESET</button>
-      <button class="timer-ctrl-btn" id="timerStartBtn">START</button>
-      <button class="timer-ctrl-btn" id="timerUseBtn">USE TIME</button>
-    </div>
+  <!-- SHUTTER COUNTDOWN OVERLAY -->
+  <div id="shutterCountdown">
+    <span class="countdown-num" id="countdownNum"></span>
   </div>
 
   <!-- EDITORIAL OVERLAY -->
@@ -478,7 +467,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
   <!-- CONTROLS -->
   <div id="controlsBar">
     <button id="recordBtn" class="ctrl-btn" aria-label="Record">✎</button>
-    <button id="timerBtn" class="ctrl-btn" aria-label="Timer">⏱</button>
+    <button id="shutterTimerBtn" class="ctrl-btn" aria-label="Shutter Timer">⏱<span id="shutterTimerBadge"></span></button>
     <button id="captureBtn" aria-label="Capture"></button>
     <button id="flipBtn" class="ctrl-btn" aria-label="Flip Camera">⟳</button>
   </div>
@@ -620,12 +609,9 @@ var segReady     = false;
 var mpCamera     = null;
 var selfieSegmentation = null;
 
-// Timer state
-var timerRunning  = false;
-var timerStart    = 0;
-var timerElapsed  = 0;
-var timerInterval = null;
-var timerVisible  = false;
+// Shutter timer state
+var shutterDelay    = 0; // 0=off, 3, 5, 10
+var shutterCountingDown = false;
 
 // Mask processing canvases (for cleaner edges)
 var maskCanvas    = document.createElement('canvas');
@@ -636,13 +622,11 @@ var SERIF   = '"DM Serif Display",Georgia,serif';
 var MANROPE = '"Manrope",' + SANS;
 var GOLD    = '#C8A44E';
 
-// ── TIMER DOM ──
-var timerOverlay  = document.getElementById('timerOverlay');
-var timerDisplay  = document.getElementById('timerDisplay');
-var timerStartBtn = document.getElementById('timerStartBtn');
-var timerResetBtn = document.getElementById('timerResetBtn');
-var timerUseBtn   = document.getElementById('timerUseBtn');
-var timerBtn      = document.getElementById('timerBtn');
+// ── SHUTTER TIMER DOM ──
+var shutterTimerBtn   = document.getElementById('shutterTimerBtn');
+var shutterTimerBadge = document.getElementById('shutterTimerBadge');
+var shutterCountdown  = document.getElementById('shutterCountdown');
+var countdownNum      = document.getElementById('countdownNum');
 
 // ── FILTER TOGGLE ──
 filterBtns.forEach(function(btn) {
@@ -654,83 +638,54 @@ filterBtns.forEach(function(btn) {
   });
 });
 
-// ── TIMER LOGIC ──
-timerBtn.addEventListener('click', function() {
-  timerVisible = !timerVisible;
-  timerOverlay.style.display = timerVisible ? 'flex' : 'none';
-  timerBtn.classList.toggle('active', timerVisible);
+// ── SHUTTER TIMER LOGIC ──
+var SHUTTER_DELAYS = [0, 3, 5, 10];
+
+shutterTimerBtn.addEventListener('click', function() {
+  if (shutterCountingDown) return; // ignore during countdown
+  var idx = SHUTTER_DELAYS.indexOf(shutterDelay);
+  shutterDelay = SHUTTER_DELAYS[(idx + 1) % SHUTTER_DELAYS.length];
+  updateShutterBadge();
 });
 
-timerStartBtn.addEventListener('click', function() {
-  if (!timerRunning) {
-    // Start
-    timerRunning = true;
-    timerStart = Date.now() - timerElapsed;
-    timerStartBtn.textContent = 'STOP';
-    timerStartBtn.classList.add('running');
-    timerUseBtn.style.display = 'none';
-    timerInterval = setInterval(updateTimerDisplay, 100);
+function updateShutterBadge() {
+  if (shutterDelay === 0) {
+    shutterTimerBadge.style.display = 'none';
+    shutterTimerBtn.classList.remove('active');
   } else {
-    // Stop
-    timerRunning = false;
-    timerElapsed = Date.now() - timerStart;
-    clearInterval(timerInterval);
-    timerStartBtn.textContent = 'START';
-    timerStartBtn.classList.remove('running');
-    timerUseBtn.style.display = 'block';
-    updateTimerDisplay();
+    shutterTimerBadge.style.display = 'flex';
+    shutterTimerBadge.textContent = shutterDelay + 's';
+    shutterTimerBtn.classList.add('active');
   }
-});
+}
 
-timerResetBtn.addEventListener('click', function() {
-  timerRunning = false;
-  timerElapsed = 0;
-  clearInterval(timerInterval);
-  timerStartBtn.textContent = 'START';
-  timerStartBtn.classList.remove('running');
-  timerUseBtn.style.display = 'none';
-  timerDisplay.textContent = '0:00:00';
-});
+function doShutterCountdown(seconds) {
+  return new Promise(function(resolve) {
+    shutterCountingDown = true;
+    shutterCountdown.style.display = 'flex';
+    var remaining = seconds;
 
-timerUseBtn.addEventListener('click', function() {
-  // Apply timer result to record fields
-  var ms = timerElapsed;
-  var totalSec = Math.floor(ms / 1000);
-  var h = Math.floor(totalSec / 3600);
-  var m = Math.floor((totalSec % 3600) / 60);
-  var s = totalSec % 60;
-  timeH.value = h;
-  timeM.value = String(m).padStart(2, '0');
-  timeS.value = String(s).padStart(2, '0');
-  // Also apply the record immediately
-  var hasTime = true;
-  record = {
-    time: h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'),
-    category: recCat.value,
-    name: recName.value || '',
-    race: recRace.value || 'REXTREME 2026',
-    raceDate: recDate.value || '2026.08.01',
-    venue: recVenue.value || '수원컨벤션센터'
-  };
-  updateOverlay();
-  recordBtn.classList.add('has-data');
-  // Hide timer, show brief confirmation
-  timerUseBtn.textContent = '✓ APPLIED';
-  setTimeout(function() {
-    timerUseBtn.textContent = 'USE TIME';
-    timerVisible = false;
-    timerOverlay.style.display = 'none';
-    timerBtn.classList.remove('active');
-  }, 800);
-});
+    function showNum() {
+      countdownNum.textContent = remaining;
+      // Force re-trigger animation
+      countdownNum.style.animation = 'none';
+      countdownNum.offsetHeight; // reflow
+      countdownNum.style.animation = 'countPulse 0.8s ease-out';
+    }
 
-function updateTimerDisplay() {
-  var ms = timerRunning ? (Date.now() - timerStart) : timerElapsed;
-  var totalSec = Math.floor(ms / 1000);
-  var h = Math.floor(totalSec / 3600);
-  var m = Math.floor((totalSec % 3600) / 60);
-  var s = totalSec % 60;
-  timerDisplay.textContent = h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    showNum();
+    var iv = setInterval(function() {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(iv);
+        shutterCountdown.style.display = 'none';
+        shutterCountingDown = false;
+        resolve();
+      } else {
+        showNum();
+      }
+    }, 1000);
+  });
 }
 
 // ── TIME INPUT AUTO-TAB ──
@@ -1012,6 +967,13 @@ flipBtn.addEventListener('click', async function() {
 
 // ── CAPTURE ──
 captureBtn.addEventListener('click', async function() {
+  if (shutterCountingDown) return; // already counting down
+  
+  // If shutter timer is set, do countdown first
+  if (shutterDelay > 0) {
+    await doShutterCountdown(shutterDelay);
+  }
+  
   var flash = document.createElement('div');
   flash.className = 'flash';
   document.body.appendChild(flash);
