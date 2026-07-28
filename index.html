@@ -245,10 +245,41 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
 }
 #segLoading .loading { border-top-color:#888; }
 
+/* ── TIMER ── */
+#timerOverlay {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:14; display:none; flex-direction:column; align-items:center; gap:0.5rem;
+  pointer-events:auto;
+}
+#timerDisplay {
+  font-family:var(--sans); font-size:clamp(2.8rem,12vw,4.2rem); font-weight:900;
+  color:#111; letter-spacing:0.04em; font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 12px rgba(255,255,255,0.8);
+  line-height:1;
+}
+.timer-controls {
+  display:flex; gap:0.5rem; align-items:center;
+}
+.timer-ctrl-btn {
+  border:none; padding:0.4rem 1rem; font-size:0.65rem; font-weight:700;
+  letter-spacing:0.14em; cursor:pointer; font-family:var(--sans);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  transition:all 0.15s;
+}
+.timer-ctrl-btn:active { transform:scale(0.94); }
+#timerStartBtn { background:#111; color:#fff; }
+#timerStartBtn.running { background:#e53e3e; color:#fff; }
+#timerResetBtn { background:rgba(0,0,0,0.08); color:#555; }
+#timerUseBtn { background:var(--gold); color:#fff; display:none; }
+.timer-label {
+  font-family:var(--display); font-size:0.55rem; font-weight:600;
+  letter-spacing:0.2em; color:rgba(0,0,0,0.4); text-transform:uppercase;
+}
+
 /* ── CONTROLS ── */
 #controlsBar {
   position:absolute; bottom:0; left:0; right:0; z-index:10;
-  display:flex; align-items:center; justify-content:space-around;
+  display:flex; align-items:center; justify-content:center; gap:1.2rem;
   padding:0.8rem 1.5rem; padding-bottom:calc(1rem + var(--safe-bottom));
   background:linear-gradient(to top,rgba(228,228,228,0.9) 0%,transparent 100%);
 }
@@ -263,7 +294,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
 }
 #captureBtn:active { transform:scale(0.88); }
 #captureBtn:active::after { transform:scale(0.84); }
-#flipBtn,#recordBtn {
+.ctrl-btn {
   width:42px; height:42px; border-radius:50%; border:none;
   background:rgba(0,0,0,0.08); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
   color:#333; font-size:1.1rem; cursor:pointer;
@@ -271,6 +302,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
 }
 #flipBtn:active { transform:rotate(180deg); }
 #recordBtn.has-data { background:#111; color:#fff; }
+#timerBtn.active { background:#e53e3e; color:#fff; }
 
 /* ── RECORD PANEL ── */
 #recordPanel {
@@ -382,6 +414,17 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
     <span>LOADING MODEL...</span>
   </div>
 
+  <!-- TIMER OVERLAY -->
+  <div id="timerOverlay">
+    <span class="timer-label">STOPWATCH</span>
+    <div id="timerDisplay">0:00:00</div>
+    <div class="timer-controls">
+      <button class="timer-ctrl-btn" id="timerResetBtn">RESET</button>
+      <button class="timer-ctrl-btn" id="timerStartBtn">START</button>
+      <button class="timer-ctrl-btn" id="timerUseBtn">USE TIME</button>
+    </div>
+  </div>
+
   <!-- EDITORIAL OVERLAY -->
   <div id="overlayLayer">
     <div class="ov-frame-border"></div>
@@ -434,9 +477,10 @@ html,body { width:100%; height:100%; overflow:hidden; background:#fff; font-fami
 
   <!-- CONTROLS -->
   <div id="controlsBar">
-    <button id="recordBtn" aria-label="Record">⏱</button>
+    <button id="recordBtn" class="ctrl-btn" aria-label="Record">✎</button>
+    <button id="timerBtn" class="ctrl-btn" aria-label="Timer">⏱</button>
     <button id="captureBtn" aria-label="Capture"></button>
-    <button id="flipBtn" aria-label="Flip Camera">⟳</button>
+    <button id="flipBtn" class="ctrl-btn" aria-label="Flip Camera">⟳</button>
   </div>
 </div>
 
@@ -576,10 +620,29 @@ var segReady     = false;
 var mpCamera     = null;
 var selfieSegmentation = null;
 
+// Timer state
+var timerRunning  = false;
+var timerStart    = 0;
+var timerElapsed  = 0;
+var timerInterval = null;
+var timerVisible  = false;
+
+// Mask processing canvases (for cleaner edges)
+var maskCanvas    = document.createElement('canvas');
+var maskCtx       = maskCanvas.getContext('2d');
+
 var SANS    = '"Geist Sans","Geist",-apple-system,BlinkMacSystemFont,sans-serif';
 var SERIF   = '"DM Serif Display",Georgia,serif';
 var MANROPE = '"Manrope",' + SANS;
 var GOLD    = '#C8A44E';
+
+// ── TIMER DOM ──
+var timerOverlay  = document.getElementById('timerOverlay');
+var timerDisplay  = document.getElementById('timerDisplay');
+var timerStartBtn = document.getElementById('timerStartBtn');
+var timerResetBtn = document.getElementById('timerResetBtn');
+var timerUseBtn   = document.getElementById('timerUseBtn');
+var timerBtn      = document.getElementById('timerBtn');
 
 // ── FILTER TOGGLE ──
 filterBtns.forEach(function(btn) {
@@ -590,6 +653,85 @@ filterBtns.forEach(function(btn) {
     else bgColor = '#F0F0F0';
   });
 });
+
+// ── TIMER LOGIC ──
+timerBtn.addEventListener('click', function() {
+  timerVisible = !timerVisible;
+  timerOverlay.style.display = timerVisible ? 'flex' : 'none';
+  timerBtn.classList.toggle('active', timerVisible);
+});
+
+timerStartBtn.addEventListener('click', function() {
+  if (!timerRunning) {
+    // Start
+    timerRunning = true;
+    timerStart = Date.now() - timerElapsed;
+    timerStartBtn.textContent = 'STOP';
+    timerStartBtn.classList.add('running');
+    timerUseBtn.style.display = 'none';
+    timerInterval = setInterval(updateTimerDisplay, 100);
+  } else {
+    // Stop
+    timerRunning = false;
+    timerElapsed = Date.now() - timerStart;
+    clearInterval(timerInterval);
+    timerStartBtn.textContent = 'START';
+    timerStartBtn.classList.remove('running');
+    timerUseBtn.style.display = 'block';
+    updateTimerDisplay();
+  }
+});
+
+timerResetBtn.addEventListener('click', function() {
+  timerRunning = false;
+  timerElapsed = 0;
+  clearInterval(timerInterval);
+  timerStartBtn.textContent = 'START';
+  timerStartBtn.classList.remove('running');
+  timerUseBtn.style.display = 'none';
+  timerDisplay.textContent = '0:00:00';
+});
+
+timerUseBtn.addEventListener('click', function() {
+  // Apply timer result to record fields
+  var ms = timerElapsed;
+  var totalSec = Math.floor(ms / 1000);
+  var h = Math.floor(totalSec / 3600);
+  var m = Math.floor((totalSec % 3600) / 60);
+  var s = totalSec % 60;
+  timeH.value = h;
+  timeM.value = String(m).padStart(2, '0');
+  timeS.value = String(s).padStart(2, '0');
+  // Also apply the record immediately
+  var hasTime = true;
+  record = {
+    time: h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'),
+    category: recCat.value,
+    name: recName.value || '',
+    race: recRace.value || 'REXTREME 2026',
+    raceDate: recDate.value || '2026.08.01',
+    venue: recVenue.value || '수원컨벤션센터'
+  };
+  updateOverlay();
+  recordBtn.classList.add('has-data');
+  // Hide timer, show brief confirmation
+  timerUseBtn.textContent = '✓ APPLIED';
+  setTimeout(function() {
+    timerUseBtn.textContent = 'USE TIME';
+    timerVisible = false;
+    timerOverlay.style.display = 'none';
+    timerBtn.classList.remove('active');
+  }, 800);
+});
+
+function updateTimerDisplay() {
+  var ms = timerRunning ? (Date.now() - timerStart) : timerElapsed;
+  var totalSec = Math.floor(ms / 1000);
+  var h = Math.floor(totalSec / 3600);
+  var m = Math.floor((totalSec % 3600) / 60);
+  var s = totalSec % 60;
+  timerDisplay.textContent = h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
 
 // ── TIME INPUT AUTO-TAB ──
 [timeH, timeM, timeS].forEach(function(inp, i, arr) {
@@ -709,12 +851,67 @@ function initSegmentation() {
   });
 }
 
+// Refine segmentation mask: threshold + edge smoothing
+function refineMask(rawMask, w, h) {
+  maskCanvas.width = w;
+  maskCanvas.height = h;
+
+  // Draw raw mask
+  maskCtx.clearRect(0, 0, w, h);
+  maskCtx.drawImage(rawMask, 0, 0, w, h);
+
+  // Get pixel data and apply threshold to sharpen edges
+  var imageData = maskCtx.getImageData(0, 0, w, h);
+  var data = imageData.data;
+  var threshold = 128; // pixels above this → fully opaque, below → fully transparent
+  var softZone = 40;   // range for soft edge transition
+
+  for (var i = 3; i < data.length; i += 4) {
+    var a = data[i];
+    if (a > threshold + softZone) {
+      data[i] = 255;
+    } else if (a < threshold - softZone) {
+      data[i] = 0;
+    } else {
+      // Smooth transition in the soft zone
+      data[i] = Math.round(((a - (threshold - softZone)) / (softZone * 2)) * 255);
+    }
+  }
+  maskCtx.putImageData(imageData, 0, 0);
+
+  // Apply slight blur for anti-aliased edges (draw at slightly smaller then back)
+  // Use CSS filter via a second pass
+  var tmpCanvas2 = document.createElement('canvas');
+  tmpCanvas2.width = w;
+  tmpCanvas2.height = h;
+  var tmpCtx2 = tmpCanvas2.getContext('2d');
+  tmpCtx2.filter = 'blur(1.5px)';
+  tmpCtx2.drawImage(maskCanvas, 0, 0);
+
+  // Re-threshold after blur to keep edges clean but smooth
+  var blurData = tmpCtx2.getImageData(0, 0, w, h);
+  var bd = blurData.data;
+  for (var j = 3; j < bd.length; j += 4) {
+    if (bd[j] > 20) {
+      bd[j] = Math.min(255, Math.round(bd[j] * 1.4));
+    } else {
+      bd[j] = 0;
+    }
+  }
+  tmpCtx2.putImageData(blurData, 0, 0);
+
+  return tmpCanvas2;
+}
+
 function onSegResults(results) {
   lastMask = results.segmentationMask;
   lastImage = results.image;
 
   var cw = displayCanvas.width;
   var ch = displayCanvas.height;
+
+  // Refine the mask for cleaner edges
+  var cleanMask = refineMask(results.segmentationMask, cw, ch);
 
   displayCtx.save();
   displayCtx.clearRect(0, 0, cw, ch);
@@ -725,8 +922,8 @@ function onSegResults(results) {
     displayCtx.scale(-1, 1);
   }
 
-  // Draw the segmentation mask
-  displayCtx.drawImage(results.segmentationMask, 0, 0, cw, ch);
+  // Draw the refined mask
+  displayCtx.drawImage(cleanMask, 0, 0, cw, ch);
 
   // Draw only the person where the mask is opaque
   displayCtx.globalCompositeOperation = 'source-in';
@@ -903,6 +1100,9 @@ async function renderExportCanvas() {
   c.clearRect(0, 0, W, H);
 
   if (lastMask && lastImage) {
+    // Refine mask at export resolution for clean edges
+    var cleanExportMask = refineMask(lastMask, W, H);
+
     // Create temp canvas for compositing at export res
     var tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = W; tmpCanvas.height = H;
@@ -911,8 +1111,8 @@ async function renderExportCanvas() {
     tmpCtx.save();
     if (isFront) { tmpCtx.translate(W, 0); tmpCtx.scale(-1, 1); }
 
-    // Draw mask
-    tmpCtx.drawImage(lastMask, 0, 0, W, H);
+    // Draw refined mask
+    tmpCtx.drawImage(cleanExportMask, 0, 0, W, H);
     // Person only where mask is
     tmpCtx.globalCompositeOperation = 'source-in';
     tmpCtx.drawImage(lastImage, 0, 0, W, H);
