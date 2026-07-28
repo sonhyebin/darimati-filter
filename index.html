@@ -506,6 +506,8 @@ var maskEMA        = null;
 var lastVideoTs    = 0;         // segmentForVideo needs strictly increasing timestamps
 var emptyStreak    = 0;
 var demoting       = false;
+var hqBusy         = false;     // capture-time refine in progress — live loop pauses
+var legacyStillCb  = null;      // one-shot intercept of the legacy onResults handler
 // ?seg=tasks|legacy|none forces a segmenter (debugging aid)
 var segForceMatch  = location.search.match(/[?&]seg=(tasks|legacy|none)\b/);
 var segForce       = segForceMatch ? segForceMatch[1] : null;
@@ -1288,6 +1290,12 @@ function initLegacySegmenter() {
   // landscape model. Mirroring is handled in buildPersonLayer, not here.
   selfieSegmentation.setOptions({ modelSelection: 0, selfieMode: false });
   selfieSegmentation.onResults(function(results) {
+    if (legacyStillCb) {
+      var cb = legacyStillCb;
+      legacyStillCb = null;
+      cb(results.segmentationMask);
+      return;
+    }
     var img = results.image;
     var aspect = (img.width || video.videoWidth) / (img.height || video.videoHeight || 1);
     buildPersonLayer(img, refineMask(results.segmentationMask, aspect));
@@ -1375,7 +1383,7 @@ function onTaskResult(result) {
 function startFrameLoop() {
   var warmedUp = false;
   async function tick() {
-    if (video.readyState >= 2) {
+    if (video.readyState >= 2 && !hqBusy) {
       if (segMode === 'tasks' && taskSegmenter) {
         try {
           // iOS coarsens performance.now() to 1ms, so two frames can read the
@@ -1414,6 +1422,241 @@ function flushCapture() {
   pendingCapture = null;
   renderExport(snapshotPerson(), capturedPersonBox, capturedRaw.width ? capturedRaw : null);
   done();
+}
+
+/* ══════════════════════════════════════════
+   CAPTURE-TIME REFINEMENT
+
+   The live preview has to run in real time, so its mask is coarse. The still
+   has no such budget: re-segment the frozen frame, run the model again on a
+   person-crop (the model sees the person larger → tighter boundary), then
+   snap the mask to real image edges with a guided filter.
+══════════════════════════════════════════ */
+var HQ_LO = 0.38, HQ_HI = 0.80;
+
+function segmentStill(source) {
+  if (segMode === 'tasks' && taskSegmenter) {
+    return new Promise(function(resolve, reject) {
+      try {
+        var ts = Math.max(lastVideoTs + 1, performance.now());
+        lastVideoTs = ts;
+        taskSegmenter.segmentForVideo(source, ts, function(result) {
+          var m = result.confidenceMasks && result.confidenceMasks[0];
+          if (!m) { resolve(null); return; }
+          var bg = m.getAsFloat32Array();
+          var f = new Float32Array(bg.length);       // person = 1 − background
+          for (var i = 0; i < bg.length; i++) f[i] = 1 - bg[i];
+          resolve({ f: f, w: m.width, h: m.height });
+        });
+      } catch (e) { reject(e); }
+    });
+  }
+  if (segMode === 'legacy' && selfieSegmentation) {
+    return new Promise(function(resolve, reject) {
+      legacyStillCb = function(mask) {
+        var mw = mask.width || 256, mh = mask.height || 256;
+        var c = document.createElement('canvas');
+        c.width = mw; c.height = mh;
+        var cx = c.getContext('2d');
+        cx.drawImage(mask, 0, 0);
+        var d = cx.getImageData(0, 0, mw, mh).data;
+        var f = new Float32Array(mw * mh);
+        for (var i = 0; i < f.length; i++) f[i] = d[(i << 2) + 3] / 255;
+        resolve({ f: f, w: mw, h: mh });
+      };
+      selfieSegmentation.send({ image: source }).catch(function(e) {
+        legacyStillCb = null;
+        reject(e);
+      });
+    });
+  }
+  return Promise.resolve(null);
+}
+
+function floatToAlphaCanvas(f, w, h) {
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var cx = c.getContext('2d');
+  var id = cx.createImageData(w, h);
+  for (var i = 0; i < f.length; i++) {
+    var v = f[i];
+    id.data[(i << 2) + 3] = (v <= 0 ? 0 : v >= 1 ? 255 : v * 255) | 0;
+  }
+  cx.putImageData(id, 0, 0);
+  return c;
+}
+
+/* GPU-bilinear resample of an alpha canvas, read back as floats */
+function alphaAtSize(srcCanvas, W, H) {
+  var c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  var cx = c.getContext('2d');
+  cx.drawImage(srcCanvas, 0, 0, W, H);
+  var d = cx.getImageData(0, 0, W, H).data;
+  var out = new Float32Array(W * H);
+  for (var i = 0; i < out.length; i++) out[i] = d[(i << 2) + 3] / 255;
+  return out;
+}
+
+/* normalized box blur, separable running sum, clamped edges */
+function boxPass(src, dst, w, h, r, horizontal) {
+  var win = 2 * r + 1;
+  if (horizontal) {
+    for (var y = 0; y < h; y++) {
+      var row = y * w, sum = 0, x;
+      for (x = -r; x <= r; x++) sum += src[row + (x < 0 ? 0 : x >= w ? w - 1 : x)];
+      for (x = 0; x < w; x++) {
+        dst[row + x] = sum / win;
+        var add = x + r + 1; if (add >= w) add = w - 1;
+        var sub = x - r; if (sub < 0) sub = 0;
+        sum += src[row + add] - src[row + sub];
+      }
+    }
+  } else {
+    for (var x2 = 0; x2 < w; x2++) {
+      var sum2 = 0, y2;
+      for (y2 = -r; y2 <= r; y2++) sum2 += src[(y2 < 0 ? 0 : y2 >= h ? h - 1 : y2) * w + x2];
+      for (y2 = 0; y2 < h; y2++) {
+        dst[y2 * w + x2] = sum2 / win;
+        var add2 = y2 + r + 1; if (add2 >= h) add2 = h - 1;
+        var sub2 = y2 - r; if (sub2 < 0) sub2 = 0;
+        sum2 += src[add2 * w + x2] - src[sub2 * w + x2];
+      }
+    }
+  }
+}
+
+function boxBlur(src, dst, tmp, w, h, r) {
+  boxPass(src, tmp, w, h, r, true);
+  boxPass(tmp, dst, w, h, r, false);
+}
+
+/* He et al. guided filter: refine alpha `p` guided by grayscale image `I` —
+   the mask edge snaps to the real hair/shoulder boundary. */
+function guidedFilter(I, p, w, h, r, eps) {
+  var n = w * h, i;
+  var tmp = new Float32Array(n);
+  var mI = new Float32Array(n), mP = new Float32Array(n);
+  boxBlur(I, mI, tmp, w, h, r);
+  boxBlur(p, mP, tmp, w, h, r);
+
+  var Ip = new Float32Array(n), II = new Float32Array(n);
+  for (i = 0; i < n; i++) { Ip[i] = I[i] * p[i]; II[i] = I[i] * I[i]; }
+  var mIp = new Float32Array(n), mII = new Float32Array(n);
+  boxBlur(Ip, mIp, tmp, w, h, r);
+  boxBlur(II, mII, tmp, w, h, r);
+
+  var a = Ip, b = II;   // reuse
+  for (i = 0; i < n; i++) {
+    var varI = mII[i] - mI[i] * mI[i];
+    a[i] = (mIp[i] - mI[i] * mP[i]) / (varI + eps);
+    b[i] = mP[i] - a[i] * mI[i];
+  }
+  boxBlur(a, mI, tmp, w, h, r);   // meanA into mI
+  boxBlur(b, mP, tmp, w, h, r);   // meanB into mP
+  var q = a;
+  for (i = 0; i < n; i++) q[i] = mI[i] * I[i] + mP[i];
+  return q;
+}
+
+function bboxOfFloat(f, w, h, thr) {
+  var minX = w, minY = h, maxX = -1, maxY = -1;
+  for (var i = 0; i < f.length; i++) {
+    if (f[i] > thr) {
+      var x = i % w, y = (i / w) | 0;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  return maxY > minY ? { x0: minX, y0: minY, x1: maxX + 1, y1: maxY + 1 } : null;
+}
+
+async function captureHQ() {
+  if (DEMO || !capturedRaw.width) return;
+  if (segMode !== 'tasks' && segMode !== 'legacy') return;
+  hqBusy = true;
+  try {
+    var raw = capturedRaw, W = raw.width, H = raw.height;
+
+    // pass 1: whole still (no temporal smoothing — single clean frame)
+    var m1 = await segmentStill(raw);
+    if (!m1) return;
+    var alpha = alphaAtSize(floatToAlphaCanvas(m1.f, m1.w, m1.h), W, H);
+
+    // pass 2: person crop — effectively higher mask resolution on the person
+    var bb = bboxOfFloat(m1.f, m1.w, m1.h, 0.5);
+    if (bb) {
+      var mx = Math.round((bb.x1 - bb.x0) * 0.12), my = Math.round((bb.y1 - bb.y0) * 0.12);
+      var cx0 = Math.max(0, Math.round((bb.x0 - mx) / m1.w * W));
+      var cy0 = Math.max(0, Math.round((bb.y0 - my) / m1.h * H));
+      var cx1 = Math.min(W, Math.round((bb.x1 + mx) / m1.w * W));
+      var cy1 = Math.min(H, Math.round((bb.y1 + my) / m1.h * H));
+      var cw = cx1 - cx0, ch = cy1 - cy0;
+      if (cw > 40 && ch > 40 && cw * ch < W * H * 0.92) {
+        var cropC = document.createElement('canvas');
+        cropC.width = cw; cropC.height = ch;
+        cropC.getContext('2d').drawImage(raw, cx0, cy0, cw, ch, 0, 0, cw, ch);
+        var m2 = await segmentStill(cropC);
+        if (m2) {
+          var cropA = alphaAtSize(floatToAlphaCanvas(m2.f, m2.w, m2.h), cw, ch);
+          // feathered paste so the crop border never shows
+          var fx = Math.max(8, cw * 0.06), fy = Math.max(8, ch * 0.06);
+          for (var y = 0; y < ch; y++) {
+            var wy = Math.min(1, Math.min(y, ch - 1 - y) / fy);
+            for (var x = 0; x < cw; x++) {
+              var wgt = wy * Math.min(1, Math.min(x, cw - 1 - x) / fx);
+              var gi = (cy0 + y) * W + (cx0 + x);
+              alpha[gi] = alpha[gi] * (1 - wgt) + cropA[y * cw + x] * wgt;
+            }
+          }
+        }
+      }
+    }
+
+    // pass 3: snap to image edges
+    var id = capturedRawCtx.getImageData(0, 0, W, H).data;
+    var gray = new Float32Array(W * H);
+    for (var i = 0; i < gray.length; i++) {
+      var j = i << 2;
+      gray[i] = (id[j] * 0.299 + id[j + 1] * 0.587 + id[j + 2] * 0.114) / 255;
+    }
+    // small eps → the filter follows image edges hard, which kills the
+    // colour halo where the subject and background have low contrast
+    var q = guidedFilter(gray, alpha, W, H, 6, 3e-4);
+
+    // band + bbox
+    var span = HQ_HI - HQ_LO;
+    var minX = W, minY = H, maxX = -1, maxY = -1;
+    for (var k = 0; k < q.length; k++) {
+      var t = (q[k] - HQ_LO) / span;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      t = t * t * (3 - 2 * t);
+      q[k] = t;
+      if (t > 0.5) {
+        var xx = k % W, yy = (k / W) | 0;
+        if (xx < minX) minX = xx;
+        if (xx > maxX) maxX = xx;
+        if (yy < minY) minY = yy;
+        if (yy > maxY) maxY = yy;
+      }
+    }
+    if (maxY <= minY) return;   // nobody found — keep the live cutout
+
+    capturedPerson.width = W; capturedPerson.height = H;
+    capturedPersonCtx.clearRect(0, 0, W, H);
+    capturedPersonCtx.drawImage(floatToAlphaCanvas(q, W, H), 0, 0);
+    capturedPersonCtx.globalCompositeOperation = 'source-in';
+    capturedPersonCtx.drawImage(raw, 0, 0);
+    capturedPersonCtx.globalCompositeOperation = 'source-over';
+    // measured on the already-mirrored still, so no mirror flag
+    capturedPersonBox = { x0: minX / W, y0: minY / H, x1: (maxX + 1) / W, y1: (maxY + 1) / H, mirrored: false };
+  } catch (err) {
+    console.warn('[seg] capture refine failed — using live cutout', err);
+  } finally {
+    hqBusy = false;
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -1567,6 +1810,9 @@ captureBtn.addEventListener('click', async function() {
   setTimeout(function(){ flash.remove(); }, 380);
 
   await nextRenderedFrame();
+  await captureHQ();
+  renderExport(capturedPerson.width ? capturedPerson : null, capturedPersonBox,
+               capturedRaw.width ? capturedRaw : null);
 
   var gen = ++exportGen;
   var blob = await new Promise(function(res) { exportCanvas.toBlob(res, 'image/jpeg', 0.93); });
