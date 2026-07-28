@@ -10,14 +10,17 @@
 <title>DARIMATI — Race Day Filter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="frame-ribbon.jpg">
 <style>
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 :root {
   --safe-bottom:env(safe-area-inset-bottom,0px);
   --safe-top:env(safe-area-inset-top,0px);
   --sans:"Manrope",-apple-system,BlinkMacSystemFont,sans-serif;
+  --kr:"Noto Sans KR","Manrope",-apple-system,sans-serif;
   --gold:#C8A44E;
+  --controls-h:104px;
 }
 html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-family:var(--sans); touch-action:manipulation; }
 
@@ -44,6 +47,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 .hero-rule { width:48px; height:1px; background:rgba(0,0,0,0.15); margin:0.5rem auto 0.6rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
 .hero-detail {
+  font-family:var(--kr);
   font-size:0.68rem; font-weight:500; color:rgba(0,0,0,0.4); letter-spacing:0.18em;
   margin-bottom:2.4rem;
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.6s both;
@@ -60,6 +64,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 }
 #startCameraBtn:active { opacity:0.7; transform:scale(0.97); }
 .cta-notice {
+  font-family:var(--kr);
   font-size:0.6rem; color:rgba(0,0,0,0.35); line-height:1.7; max-width:260px; text-align:center;
 }
 .hero-bottom-mark {
@@ -68,14 +73,22 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
   animation:heroFadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 1s both;
 }
 #permissionScreen .msg { display:none; }
-#permissionScreen .msg.error { display:block; font-size:0.82rem; color:#e74c3c; line-height:1.7; }
+#permissionScreen .msg.error {
+  display:block; font-family:var(--kr);
+  font-size:0.78rem; color:#e74c3c; line-height:1.7; max-width:280px;
+}
 @keyframes heroFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
 
 /* ── APP ── */
-#app { display:none; position:fixed; inset:0; background:#e8e8e8; }
-#viewfinder { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-#cameraVideo { display:none; }
-#displayCanvas { width:100%; height:100%; object-fit:cover; }
+#app { display:none; position:fixed; inset:0; background:#e2e2e2; }
+#viewfinder {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  overflow:hidden; padding:calc(var(--safe-top) + 0.35rem) 0.35rem calc(var(--controls-h) + var(--safe-bottom));
+}
+/* not display:none — iOS Safari can stop decoding hidden camera video */
+#cameraVideo { position:absolute; width:2px; height:2px; opacity:0; pointer-events:none; }
+/* the canvas carries the frame's own aspect ratio — contain keeps the artwork undistorted */
+#displayCanvas { width:100%; height:100%; object-fit:contain; }
 
 /* ── SEGMENTATION LOADING ── */
 #segLoading {
@@ -121,8 +134,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 #controlsBar {
   position:absolute; bottom:0; left:0; right:0; z-index:10;
   display:flex; align-items:center; justify-content:center; gap:1.2rem;
-  padding:0.8rem 1.5rem; padding-bottom:calc(1rem + var(--safe-bottom));
-  background:linear-gradient(to top,rgba(228,228,228,0.9) 0%,transparent 100%);
+  height:calc(var(--controls-h) + var(--safe-bottom));
+  padding:0 1.5rem calc(0.5rem + var(--safe-bottom));
+  background:linear-gradient(to top,rgba(226,226,226,0.95) 40%,transparent 100%);
 }
 #captureBtn {
   width:66px; height:66px; border-radius:50%;
@@ -154,7 +168,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 
 /* ── RECORD PANEL ── */
 #recordPanel {
-  display:none; position:fixed; bottom:0; left:0; right:0; z-index:40;
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:55;
   background:rgba(255,255,255,0.96); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
   border-top:1px solid rgba(0,0,0,0.08);
   padding:1.5rem 1.5rem calc(1.5rem + var(--safe-bottom));
@@ -163,23 +177,24 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 }
 #recordPanel.open { display:block; transform:translateY(0); }
 #recordPanel .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; }
-#recordPanel .panel-title { color:#111; font-size:0.82rem; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; }
+#recordPanel .panel-title { font-family:var(--kr); color:#111; font-size:0.82rem; font-weight:700; letter-spacing:0.16em; }
 #recordPanel .panel-close { background:none; border:none; color:#999; font-size:1.5rem; cursor:pointer; }
 .record-field { margin-bottom:0.9rem; }
-.record-field label { display:block; color:#888; font-size:0.64rem; font-weight:600; letter-spacing:0.14em; margin-bottom:0.35rem; text-transform:uppercase; }
+.record-field label { font-family:var(--kr); display:block; color:#888; font-size:0.64rem; font-weight:600; letter-spacing:0.14em; margin-bottom:0.35rem; }
 .record-field input,.record-field select {
   width:100%; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.1);
-  color:#111; padding:0.6rem 0.75rem; font-size:0.92rem;
+  color:#111; padding:0.6rem 0.75rem; font-size:0.92rem; font-family:var(--kr);
   border-radius:6px; outline:none; transition:border-color 0.2s;
 }
 .record-field input:focus,.record-field select:focus { border-color:rgba(0,0,0,0.3); }
 .record-field select { -webkit-appearance:none; appearance:none; }
 .time-inputs { display:flex; align-items:center; gap:0.3rem; }
-.time-inputs input { width:68px; text-align:center; font-size:1.7rem; font-weight:900; padding:0.45rem 0.25rem; letter-spacing:0.04em; }
+.time-inputs input { width:68px; text-align:center; font-size:1.7rem; font-weight:900; padding:0.45rem 0.25rem; letter-spacing:0.04em; font-family:var(--sans); }
 .time-inputs .sep { color:#ccc; font-size:1.7rem; font-weight:900; }
 .record-actions { display:flex; gap:0.5rem; margin-top:1.1rem; }
 .record-actions button {
   flex:1; padding:0.72rem; font-size:0.8rem; font-weight:700; letter-spacing:0.14em;
+  font-family:var(--kr);
   border:none; border-radius:6px; cursor:pointer;
 }
 #recordApplyBtn { background:#111; color:#fff; }
@@ -189,8 +204,18 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 #reviewScreen {
   display:none; position:fixed; inset:0; z-index:50; background:#f5f5f5;
   flex-direction:column; align-items:center; justify-content:center; gap:0;
+  padding:1rem;
 }
-#reviewImage { max-width:90%; max-height:70vh; object-fit:contain; box-shadow:0 4px 30px rgba(0,0,0,0.12); }
+#reviewImage { max-width:92%; max-height:62vh; object-fit:contain; box-shadow:0 4px 30px rgba(0,0,0,0.12); }
+.review-tools { display:flex; gap:0.4rem; margin-top:1rem; align-items:center; flex-wrap:wrap; justify-content:center; }
+.review-chip {
+  background:rgba(255,255,255,0.9); border:1.5px solid rgba(0,0,0,0.12);
+  color:#333; padding:0.45rem 0.95rem; font-size:0.58rem; font-weight:700; letter-spacing:0.14em;
+  cursor:pointer; transition:all 0.2s;
+}
+.review-chip.active { background:#111; color:#fff; border-color:#111; }
+.review-chip:active { transform:scale(0.95); }
+#reviewRecordBtn { font-family:var(--kr); letter-spacing:0.08em; }
 .review-actions {
   display:flex; gap:0.75rem; margin-top:1.4rem;
   padding-bottom:calc(0.5rem + var(--safe-bottom));
@@ -271,11 +296,11 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
   <div class="record-field">
     <label>Finish Time</label>
     <div class="time-inputs">
-      <input type="number" id="timeH" min="0" max="23" placeholder="H">
+      <input type="number" id="timeH" min="0" max="23" placeholder="H" inputmode="numeric">
       <span class="sep">:</span>
-      <input type="number" id="timeM" min="0" max="59" placeholder="MM">
+      <input type="number" id="timeM" min="0" max="59" placeholder="MM" inputmode="numeric">
       <span class="sep">:</span>
-      <input type="number" id="timeS" min="0" max="59" placeholder="SS">
+      <input type="number" id="timeS" min="0" max="59" placeholder="SS" inputmode="numeric">
     </div>
   </div>
   <div class="record-field">
@@ -299,6 +324,11 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 <!-- REVIEW -->
 <div id="reviewScreen">
   <img id="reviewImage" alt="Captured">
+  <div class="review-tools">
+    <button class="review-chip frame-chip active" data-frame="ribbon">RIBBON</button>
+    <button class="review-chip frame-chip" data-frame="sport">SPORT</button>
+    <button class="review-chip" id="reviewRecordBtn">✎ 기록 수정</button>
+  </div>
   <div class="review-actions">
     <button class="review-btn retake" id="retakeBtn">RETAKE</button>
     <button class="review-btn download-btn" id="downloadBtn">↓ SAVE</button>
@@ -306,10 +336,9 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
   </div>
 </div>
 
-<canvas id="exportCanvas" width="1080" height="1920"></canvas>
+<canvas id="exportCanvas"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <script>
 (function() {
@@ -317,21 +346,62 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 
 /* ══════════════════════════════════════════
    FRAME DEFINITIONS
+
+   Every geometry value is a fraction of the frame's own width/height, measured
+   off the source artwork in assets-src/. The runtime plates are built by
+   tools/build_frames.py, which also erases the baked-in finish time and 종목 so
+   the values below can be drawn live in exactly the same spots.
 ══════════════════════════════════════════ */
 var FRAME_DEFS = {
   ribbon: {
-    src: 'frame-ribbon.png',
-    // box opening area (fraction of canvas)
-    opening: { x:0.065, y:0.025, w:0.87, h:0.72 }
+    plate: 'frame-ribbon.jpg',
+    w: 1055, h: 1491,
+    // the ribbon bow is tied on the front of the box, so it occludes the person
+    fg: { src: 'frame-ribbon-fg.png', x:0, y:0, w:0.375, h:0.300 },
+    // inside of the box: back wall down to the front edge of the floor
+    stage: { x:0.075, y:0.028, w:0.850, h:0.754 },
+    record: {
+      align: 0.8886,
+      time: { y:0.8598, size:0.0252, color:'#0a0a0a' },
+      cat:  { y:0.8770, size:0.0136, color:'#333333', maxW:0.179 }
+    }
   },
   sport: {
-    src: 'frame-sport.png',
-    opening: { x:0.058, y:0.060, w:0.884, h:0.65 }
+    plate: 'frame-sport.jpg',
+    w: 1024, h: 1536,
+    fg: null,
+    // narrower than the box mouth so the printed side-wall copy stays readable
+    stage: { x:0.170, y:0.100, w:0.660, h:0.682 },
+    record: {
+      align: 0.8775,
+      time: { y:0.8522, size:0.0371, color:'#0a0a0a' },
+      cat:  { y:0.8865, size:0.0211, color:'#0a0a0a', maxW:0.2475 }
+    }
   }
 };
 
-var SANS = '"Manrope",-apple-system,BlinkMacSystemFont,sans-serif';
-var GOLD = '#C8A44E';
+var MANROPE = '"Manrope",-apple-system,BlinkMacSystemFont,sans-serif';
+var KRSANS  = '"Noto Sans KR","Manrope",-apple-system,sans-serif';
+
+// longest edge of the on-screen preview canvas — the export uses the frame's
+// native resolution instead
+var PREVIEW_LONG_EDGE = 900;
+
+// mask post-processing works at this width; the raw model output is only
+// 256px wide anyway, so going higher just burns CPU
+var MASK_W = 256;
+
+// canvas filter() only landed in Safari 18 — without it the feather pass is a
+// no-op, so widen the alpha ramp instead of shipping a hard die-cut edge
+var CTX_FILTER_OK = (function() {
+  var c = document.createElement('canvas').getContext('2d');
+  try { c.filter = 'blur(1px)'; } catch (e) { return false; }
+  return c.filter === 'blur(1px)';
+})();
+var MASK_LO = CTX_FILTER_OK ? 100 : 78;
+var MASK_HI = CTX_FILTER_OK ? 160 : 188;
+
+var DEMO = /[?&]demo\b/.test(location.search);
 
 /* ══════════════════════════════════════════
    DOM REFS
@@ -363,6 +433,8 @@ var shutterTimerBtn   = document.getElementById('shutterTimerBtn');
 var shutterTimerBadge = document.getElementById('shutterTimerBadge');
 var shutterCountdown  = document.getElementById('shutterCountdown');
 var countdownNum      = document.getElementById('countdownNum');
+var reviewRecordBtn = document.getElementById('reviewRecordBtn');
+var frameChips = document.querySelectorAll('.frame-chip');
 var timeH = document.getElementById('timeH');
 var timeM = document.getElementById('timeM');
 var timeS = document.getElementById('timeS');
@@ -375,29 +447,45 @@ var recName = document.getElementById('recordName');
 var facingMode     = 'user';
 var isFront        = true;
 var currentFrame   = 'ribbon';
-var record         = null;
+// starts at the artwork's own defaults so an untouched frame still reads complete
+var record         = { time:null, category:'개인전', name:'' };
 var capturedBlob   = null;
-var lastMask       = null;
-var lastImage      = null;
-var segReady       = false;
-var mpCamera       = null;
+var stream         = null;
 var selfieSegmentation = null;
 var shutterDelay   = 0;
 var shutterCountingDown = false;
+var pendingCapture = null;   // resolve fn, set while a shutter press waits for a frame
 
-// Pre-processed frame overlays
-var frameCache = {};   // { ribbon: { display: canvas, export: canvas, img: Image }, ... }
+// { ribbon: { plate:Image, fg:Image }, ... }
+var frameAssets = {};
 
-// Reusable canvases
+// person cutout, kept at the camera's own resolution and reused every frame
 var personCanvas = document.createElement('canvas');
 var personCtx    = personCanvas.getContext('2d');
-var maskCanvas   = document.createElement('canvas');
-var maskCtx      = maskCanvas.getContext('2d');
+var personReady  = false;
+
+// frozen copy of the person at the moment of capture, so the review screen can
+// re-composite the same shot with a different frame or an edited record
+var capturedPerson = document.createElement('canvas');
+var capturedPersonCtx = capturedPerson.getContext('2d');
+var reviewing = false;
+// JPEG encoding is async and can be slow; the generation counter stops a stale
+// encode from overwriting a newer one when edits come in quick succession
+var exportGen = 0;
+
+// the cutout fitted into the current frame's stage rect
+var stageCanvas = document.createElement('canvas');
+var stageCtx    = stageCanvas.getContext('2d');
+
+var maskCanvas = document.createElement('canvas');
+var maskCtx    = maskCanvas.getContext('2d', { willReadFrequently:true });
+var blurCanvas = document.createElement('canvas');
+var blurCtx    = blurCanvas.getContext('2d');
 
 /* ══════════════════════════════════════════
-   FRAME LOADING & PROCESSING
+   ASSET LOADING
 ══════════════════════════════════════════ */
-function loadFrameImage(src) {
+function loadImage(src) {
   return new Promise(function(resolve, reject) {
     var img = new Image();
     img.onload = function() { resolve(img); };
@@ -406,73 +494,24 @@ function loadFrameImage(src) {
   });
 }
 
-function createFrameOverlay(img, opening, w, h) {
-  var c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  var ctx = c.getContext('2d');
-
-  // Draw full frame image scaled to canvas
-  ctx.drawImage(img, 0, 0, w, h);
-
-  // Cut out the box opening (transparent hole for person)
-  var ox = Math.round(opening.x * w);
-  var oy = Math.round(opening.y * h);
-  var ow = Math.round(opening.w * w);
-  var oh = Math.round(opening.h * h);
-
-  // Feathered cutout: clear center, smooth edges
-  var feather = Math.round(Math.min(w, h) * 0.005); // subtle feather
-
-  // Clear the main opening
-  ctx.clearRect(ox + feather, oy + feather, ow - feather*2, oh - feather*2);
-
-  // Feather edges using gradient masks
-  ctx.globalCompositeOperation = 'destination-out';
-
-  // Top edge
-  var g = ctx.createLinearGradient(0, oy, 0, oy + feather);
-  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
-  ctx.fillStyle = g;
-  ctx.fillRect(ox + feather, oy, ow - feather*2, feather);
-
-  // Bottom edge
-  g = ctx.createLinearGradient(0, oy+oh, 0, oy+oh-feather);
-  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
-  ctx.fillStyle = g;
-  ctx.fillRect(ox + feather, oy+oh-feather, ow - feather*2, feather);
-
-  // Left edge
-  g = ctx.createLinearGradient(ox, 0, ox + feather, 0);
-  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
-  ctx.fillStyle = g;
-  ctx.fillRect(ox, oy + feather, feather, oh - feather*2);
-
-  // Right edge
-  g = ctx.createLinearGradient(ox+ow, 0, ox+ow-feather, 0);
-  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
-  ctx.fillStyle = g;
-  ctx.fillRect(ox+ow-feather, oy + feather, feather, oh - feather*2);
-
-  ctx.globalCompositeOperation = 'source-over';
-  return c;
+function loadAllFrames() {
+  var keys = Object.keys(FRAME_DEFS);
+  return Promise.all(keys.map(function(key) {
+    var def = FRAME_DEFS[key];
+    var jobs = [loadImage(def.plate)];
+    jobs.push(def.fg ? loadImage(def.fg.src) : Promise.resolve(null));
+    return Promise.all(jobs).then(function(res) {
+      frameAssets[key] = { plate: res[0], fg: res[1] };
+    });
+  }));
 }
 
-async function loadAllFrames() {
-  var keys = Object.keys(FRAME_DEFS);
-  for (var i = 0; i < keys.length; i++) {
-    var key = keys[i];
-    var def = FRAME_DEFS[key];
-    try {
-      var img = await loadFrameImage(def.src);
-      frameCache[key] = {
-        img: img,
-        display: createFrameOverlay(img, def.opening, 720, 1280),
-        export:  createFrameOverlay(img, def.opening, 1080, 1920)
-      };
-    } catch(e) {
-      console.warn('Frame load failed:', key, e);
-    }
-  }
+function loadFonts() {
+  if (!document.fonts || !document.fonts.load) return Promise.resolve();
+  return Promise.all([
+    document.fonts.load('800 40px "Manrope"'),
+    document.fonts.load('700 30px "Noto Sans KR"')
+  ]).catch(function() { /* fall back to system sans */ });
 }
 
 /* ══════════════════════════════════════════
@@ -483,6 +522,8 @@ filterBtns.forEach(function(btn) {
     filterBtns.forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     currentFrame = btn.dataset.filter;
+    sizePreviewCanvas();
+    if (DEMO) renderPreview();
   });
 });
 
@@ -536,19 +577,20 @@ function doShutterCountdown(seconds) {
 ══════════════════════════════════════════ */
 [timeH, timeM, timeS].forEach(function(inp, i, arr) {
   inp.addEventListener('input', function() {
-    if (inp.value.length >= 2 && i < arr.length - 1) arr[i+1].focus();
     var max = i === 0 ? 23 : 59;
-    if (parseInt(inp.value) > max) inp.value = max;
+    if (parseInt(inp.value, 10) > max) inp.value = max;
+    if (inp.value.length >= 2 && i < arr.length - 1) arr[i+1].focus();
   });
   inp.addEventListener('keydown', function(e) {
     if (e.key === 'Backspace' && inp.value === '' && i > 0) arr[i-1].focus();
   });
 });
 
-recordBtn.addEventListener('click', function() {
+function openRecordPanel() {
   recordPanel.style.display = 'block';
   setTimeout(function() { recordPanel.classList.add('open'); }, 10);
-});
+}
+recordBtn.addEventListener('click', openRecordPanel);
 recordCloseBtn.addEventListener('click', closePanel);
 function closePanel() {
   recordPanel.classList.remove('open');
@@ -560,309 +602,481 @@ recordApplyBtn.addEventListener('click', function() {
   var hasTime = h !== '' || m !== '' || s !== '';
   record = {
     time: hasTime
-      ? (parseInt(h)||0) + ':' + String(parseInt(m)||0).padStart(2,'0') + ':' + String(parseInt(s)||0).padStart(2,'0')
+      ? (parseInt(h, 10)||0) + ':' + String(parseInt(m, 10)||0).padStart(2,'0') + ':' + String(parseInt(s, 10)||0).padStart(2,'0')
       : null,
     category: recCat.value,
-    name: recName.value || ''
+    name: recName.value.trim()
   };
-  recordBtn.classList.add('has-data');
+  recordBtn.classList.toggle('has-data', !!(record.time || record.name));
   closePanel();
+  if (DEMO) renderPreview();
+  rebuildCapture();
 });
 
 recordClearBtn.addEventListener('click', function() {
-  record = null;
+  record = { time:null, category:'개인전', name:'' };
   timeH.value = ''; timeM.value = ''; timeS.value = '';
   recName.value = ''; recCat.selectedIndex = 0;
   recordBtn.classList.remove('has-data');
   closePanel();
+  if (DEMO) renderPreview();
+  rebuildCapture();
 });
 
 /* ══════════════════════════════════════════
    MASK REFINEMENT
-══════════════════════════════════════════ */
-function refineMask(rawMask, w, h) {
-  maskCanvas.width = w;
-  maskCanvas.height = h;
-  maskCtx.clearRect(0, 0, w, h);
-  maskCtx.drawImage(rawMask, 0, 0, w, h);
 
-  var imageData = maskCtx.getImageData(0, 0, w, h);
+   Runs at MASK_W instead of full camera resolution: the model only emits a
+   256px-wide mask, so the extra pixels carry no information and the per-pixel
+   JS loop is what costs frames on a phone.
+══════════════════════════════════════════ */
+function refineMask(rawMask, aspect) {
+  var mw = MASK_W;
+  var mh = Math.max(1, Math.round(MASK_W / aspect));
+
+  if (maskCanvas.width !== mw || maskCanvas.height !== mh) {
+    maskCanvas.width = mw; maskCanvas.height = mh;
+    blurCanvas.width = mw; blurCanvas.height = mh;
+  }
+
+  maskCtx.clearRect(0, 0, mw, mh);
+  maskCtx.drawImage(rawMask, 0, 0, mw, mh);
+
+  var imageData = maskCtx.getImageData(0, 0, mw, mh);
   var data = imageData.data;
-  var threshold = 128, softZone = 40;
+  var span = MASK_HI - MASK_LO;
   for (var i = 3; i < data.length; i += 4) {
     var a = data[i];
-    if (a > threshold + softZone) data[i] = 255;
-    else if (a < threshold - softZone) data[i] = 0;
-    else data[i] = Math.round(((a - (threshold - softZone)) / (softZone * 2)) * 255);
+    if (a >= MASK_HI) data[i] = 255;
+    else if (a <= MASK_LO) data[i] = 0;
+    else data[i] = ((a - MASK_LO) / span * 255) | 0;
   }
   maskCtx.putImageData(imageData, 0, 0);
 
-  var tmp = document.createElement('canvas');
-  tmp.width = w; tmp.height = h;
-  var tCtx = tmp.getContext('2d');
-  tCtx.filter = 'blur(1.5px)';
-  tCtx.drawImage(maskCanvas, 0, 0);
-  var bd = tCtx.getImageData(0, 0, w, h);
-  var d = bd.data;
-  for (var j = 3; j < d.length; j += 4) {
-    d[j] = d[j] > 20 ? Math.min(255, Math.round(d[j] * 1.4)) : 0;
-  }
-  tCtx.putImageData(bd, 0, 0);
-  return tmp;
+  if (!CTX_FILTER_OK) return maskCanvas;
+
+  // soften the cut so the silhouette does not look die-cut
+  blurCtx.clearRect(0, 0, mw, mh);
+  blurCtx.filter = 'blur(1px)';
+  blurCtx.drawImage(maskCanvas, 0, 0);
+  blurCtx.filter = 'none';
+  return blurCanvas;
 }
 
 /* ══════════════════════════════════════════
-   SEGMENTATION + LIVE RENDERING
+   PERSON LAYER
 ══════════════════════════════════════════ */
-function onSegResults(results) {
-  lastMask = results.segmentationMask;
-  lastImage = results.image;
+function buildPersonLayer(image, rawMask) {
+  var vw = image.width  || video.videoWidth;
+  var vh = image.height || video.videoHeight;
+  if (!vw || !vh) return false;
 
-  var cw = displayCanvas.width;
-  var ch = displayCanvas.height;
-
-  // Refine mask
-  var cleanMask = refineMask(results.segmentationMask, cw, ch);
-
-  // Create person-only layer (transparent bg)
-  personCanvas.width = cw;
-  personCanvas.height = ch;
-  personCtx.clearRect(0, 0, cw, ch);
-  personCtx.save();
-  if (isFront) { personCtx.translate(cw, 0); personCtx.scale(-1, 1); }
-  personCtx.drawImage(cleanMask, 0, 0, cw, ch);
-  personCtx.globalCompositeOperation = 'source-in';
-  personCtx.drawImage(results.image, 0, 0, cw, ch);
-  personCtx.restore();
-
-  // Compose final frame
-  displayCtx.clearRect(0, 0, cw, ch);
-
-  // 1. White background
-  displayCtx.fillStyle = '#FFFFFF';
-  displayCtx.fillRect(0, 0, cw, ch);
-
-  // 2. Person
-  displayCtx.drawImage(personCanvas, 0, 0, cw, ch);
-
-  // 3. Frame overlay (with transparent opening)
-  var fc = frameCache[currentFrame];
-  if (fc && fc.display) {
-    displayCtx.drawImage(fc.display, 0, 0, cw, ch);
+  if (personCanvas.width !== vw || personCanvas.height !== vh) {
+    personCanvas.width = vw; personCanvas.height = vh;
   }
+
+  personCtx.setTransform(1, 0, 0, 1, 0, 0);
+  personCtx.globalCompositeOperation = 'source-over';
+  personCtx.clearRect(0, 0, vw, vh);
+
+  // front camera is mirrored so the preview behaves like a mirror
+  if (isFront) personCtx.setTransform(-1, 0, 0, 1, vw, 0);
+
+  if (rawMask) {
+    personCtx.drawImage(refineMask(rawMask, vw / vh), 0, 0, vw, vh);
+    personCtx.globalCompositeOperation = 'source-in';
+  }
+  personCtx.drawImage(image, 0, 0, vw, vh);
+
+  personCtx.setTransform(1, 0, 0, 1, 0, 0);
+  personCtx.globalCompositeOperation = 'source-over';
+  personReady = true;
+  return true;
+}
+
+/* ══════════════════════════════════════════
+   COMPOSITE
+
+   Frame art is the background; the person is drawn on top, clipped to the
+   inside of the box. Nothing is ever cut out of the artwork.
+══════════════════════════════════════════ */
+/* Fits the cutout into the stage rect and softens the vertical edges, so an arm
+   that runs past the inside of the box fades out instead of being sliced. The
+   bottom stays a hard cut — that is the floor line the person stands on. */
+var SIDE_FADE = 0.055;
+
+function buildStageLayer(person, sw, sh) {
+  if (stageCanvas.width !== sw || stageCanvas.height !== sh) {
+    stageCanvas.width = sw; stageCanvas.height = sh;
+  }
+  var c = stageCtx;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalCompositeOperation = 'source-over';
+  c.clearRect(0, 0, sw, sh);
+
+  var scale = Math.max(sw / person.width, sh / person.height);
+  var dw = person.width * scale, dh = person.height * scale;
+  // centred horizontally, anchored to the top so heads survive and the crop
+  // falls at the floor line instead
+  c.drawImage(person, (sw - dw) / 2, 0, dw, dh);
+
+  c.globalCompositeOperation = 'destination-in';
+  var g = c.createLinearGradient(0, 0, sw, 0);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(SIDE_FADE, 'rgba(0,0,0,1)');
+  g.addColorStop(1 - SIDE_FADE, 'rgba(0,0,0,1)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = g;
+  c.fillRect(0, 0, sw, sh);
+  c.globalCompositeOperation = 'source-over';
+
+  return stageCanvas;
+}
+
+function drawComposite(ctx, W, H, key, plate, person) {
+  var def = FRAME_DEFS[key];
+  var assets = frameAssets[key] || {};
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  if (plate) {
+    ctx.drawImage(plate, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  if (person && person.width) {
+    var st = def.stage;
+    var sx = Math.round(st.x * W), sy = Math.round(st.y * H);
+    var sw = Math.round(st.w * W), sh = Math.round(st.h * H);
+    var layer = buildStageLayer(person, sw, sh);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(sx, sy, sw, sh);
+    ctx.clip();
+
+    // lift the cutout off the back wall
+    ctx.shadowColor = 'rgba(0,0,0,0.30)';
+    ctx.shadowBlur = H * 0.014;
+    ctx.shadowOffsetY = H * 0.005;
+    ctx.drawImage(layer, sx, sy);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    // redraw crisp on top of its own shadow
+    ctx.drawImage(layer, sx, sy);
+
+    ctx.restore();
+  }
+
+  if (def.fg && assets.fg) {
+    ctx.drawImage(assets.fg, def.fg.x * W, def.fg.y * H, def.fg.w * W, def.fg.h * H);
+  }
+
+  drawRecord(ctx, W, H, def);
+}
+
+function fitFont(ctx, text, weight, family, sizePx, maxW) {
+  var size = sizePx;
+  ctx.font = weight + ' ' + size + 'px ' + family;
+  while (size > 8 && ctx.measureText(text).width > maxW) {
+    size -= 0.5;
+    ctx.font = weight + ' ' + size + 'px ' + family;
+  }
+}
+
+function drawRecord(ctx, W, H, def) {
+  var r = def.record;
+  var ax = r.align * W;
+
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'alphabetic';
+
+  if (record.time) {
+    ctx.fillStyle = r.time.color;
+    ctx.font = '800 ' + (r.time.size * H) + 'px ' + MANROPE;
+    ctx.fillText(record.time, ax, r.time.y * H);
+  }
+
+  var line = record.category || '';
+  if (record.name) line = line ? line + '  ·  ' + record.name : record.name;
+  if (line) {
+    ctx.fillStyle = r.cat.color;
+    fitFont(ctx, line, '700', KRSANS, r.cat.size * H, r.cat.maxW * W);
+    ctx.fillText(line, ax, r.cat.y * H);
+  }
+}
+
+/* ══════════════════════════════════════════
+   PREVIEW
+══════════════════════════════════════════ */
+function sizePreviewCanvas() {
+  var def = FRAME_DEFS[currentFrame];
+  var scale = PREVIEW_LONG_EDGE / Math.max(def.w, def.h);
+  var w = Math.round(def.w * scale), h = Math.round(def.h * scale);
+  if (displayCanvas.width !== w || displayCanvas.height !== h) {
+    displayCanvas.width = w;
+    displayCanvas.height = h;
+  }
+}
+
+/* The plate never changes, so scale it once per frame size instead of
+   re-scaling a ~1500px JPEG on every preview frame. */
+var previewPlates = {};
+
+function previewPlate(key, W, H) {
+  var cached = previewPlates[key];
+  if (cached && cached.width === W && cached.height === H) return cached;
+  var assets = frameAssets[key];
+  if (!assets || !assets.plate) return null;
+  var c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  c.getContext('2d').drawImage(assets.plate, 0, 0, W, H);
+  previewPlates[key] = c;
+  return c;
+}
+
+function renderPreview() {
+  var W = displayCanvas.width, H = displayCanvas.height;
+  drawComposite(displayCtx, W, H, currentFrame, previewPlate(currentFrame, W, H),
+                personReady ? personCanvas : null);
+}
+
+/* ══════════════════════════════════════════
+   EXPORT — rendered at the frame's native resolution
+══════════════════════════════════════════ */
+function renderExport(person) {
+  var def = FRAME_DEFS[currentFrame];
+  var assets = frameAssets[currentFrame] || {};
+  exportCanvas.width = def.w;
+  exportCanvas.height = def.h;
+  drawComposite(exportCtx, def.w, def.h, currentFrame, assets.plate || null, person);
+}
+
+/* Freeze the current cutout so review-screen edits keep re-compositing the
+   same shot instead of whatever the camera sees now. */
+function snapshotPerson() {
+  if (!personReady || !personCanvas.width) return null;
+  capturedPerson.width = personCanvas.width;
+  capturedPerson.height = personCanvas.height;
+  capturedPersonCtx.drawImage(personCanvas, 0, 0);
+  return capturedPerson;
+}
+
+/* ══════════════════════════════════════════
+   CAMERA STREAM
+
+   The stream is owned here rather than by MediaPipe's camera_utils helper: it
+   keeps permission errors reportable on the landing screen, makes the camera
+   flip a single call, and lets the app still run — plain video inside the box —
+   when the segmentation model cannot be fetched.
+══════════════════════════════════════════ */
+function openStream() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return Promise.reject(new Error('NoMediaDevices'));
+  }
+  if (stream) stream.getTracks().forEach(function(t) { t.stop(); });
+  return navigator.mediaDevices.getUserMedia({
+    video: { facingMode: facingMode, width:{ ideal:720 }, height:{ ideal:960 } },
+    audio: false
+  }).then(function(s) {
+    stream = s;
+    isFront = facingMode === 'user';
+    video.srcObject = s;
+    return video.play();
+  }).then(function() {
+    if (video.videoWidth) return;
+    return new Promise(function(resolve) {
+      video.addEventListener('loadedmetadata', function onMeta() {
+        video.removeEventListener('loadedmetadata', onMeta);
+        resolve();
+      });
+    });
+  });
 }
 
 function initSegmentation() {
-  segLoading.style.display = 'flex';
-
-  selfieSegmentation = new SelfieSegmentation({
-    locateFile: function(file) {
-      return 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/' + file;
-    }
-  });
-  selfieSegmentation.setOptions({ modelSelection: 1, selfieMode: true });
-  selfieSegmentation.onResults(onSegResults);
-
-  mpCamera = new Camera(video, {
-    onFrame: async function() {
-      if (selfieSegmentation) await selfieSegmentation.send({image: video});
-    },
-    width: 720, height: 1280, facingMode: facingMode
-  });
-  mpCamera.start().then(function() {
-    isFront = facingMode === 'user';
-    segLoading.style.display = 'none';
-    segReady = true;
-  }).catch(function(err) {
-    console.error('Camera start failed', err);
-    segLoading.style.display = 'none';
-    fallbackRawVideo();
-  });
-}
-
-function fallbackRawVideo() {
-  function drawRaw() {
-    if (video.readyState >= 2) {
-      var cw = displayCanvas.width, ch = displayCanvas.height;
-      displayCtx.save();
-      displayCtx.fillStyle = '#FFFFFF';
-      displayCtx.fillRect(0, 0, cw, ch);
-      if (isFront) { displayCtx.translate(cw, 0); displayCtx.scale(-1, 1); }
-      var vw = video.videoWidth, vh = video.videoHeight;
-      var va = vw/vh, ca = cw/ch;
-      var sx,sy,sw,sh;
-      if (va > ca) { sh=vh; sw=vh*ca; sx=(vw-sw)/2; sy=0; }
-      else { sw=vw; sh=vw/ca; sx=0; sy=(vh-sh)/2; }
-      displayCtx.drawImage(video, sx,sy,sw,sh, 0,0,cw,ch);
-      displayCtx.restore();
-      var fc = frameCache[currentFrame];
-      if (fc && fc.display) displayCtx.drawImage(fc.display, 0, 0, cw, ch);
-    }
-    requestAnimationFrame(drawRaw);
+  if (typeof SelfieSegmentation === 'undefined') {
+    console.warn('Segmentation model unavailable — falling back to plain video');
+    return;
   }
-  drawRaw();
+  try {
+    selfieSegmentation = new SelfieSegmentation({
+      locateFile: function(file) {
+        return 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/' + file;
+      }
+    });
+    // 0 = general (256×256) — better vertical detail for portrait selfies than the
+    // landscape model. Mirroring is handled in buildPersonLayer, not here.
+    selfieSegmentation.setOptions({ modelSelection: 0, selfieMode: false });
+    selfieSegmentation.onResults(function(results) {
+      buildPersonLayer(results.image, results.segmentationMask);
+      renderPreview();
+      flushCapture();
+    });
+  } catch (err) {
+    console.error('Segmentation init failed — falling back to plain video', err);
+    selfieSegmentation = null;
+  }
 }
 
-function resizeDisplayCanvas() {
-  displayCanvas.width = 720;
-  displayCanvas.height = 1280;
+function startFrameLoop() {
+  var warmedUp = false;
+  async function tick() {
+    if (video.readyState >= 2) {
+      if (selfieSegmentation) {
+        try {
+          await selfieSegmentation.send({ image: video });
+        } catch (err) {
+          console.error('Segmentation failed — falling back to plain video', err);
+          selfieSegmentation = null;
+        }
+      } else {
+        buildPersonLayer(video, null);
+        renderPreview();
+        flushCapture();
+      }
+      if (!warmedUp) { warmedUp = true; segLoading.style.display = 'none'; }
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function flushCapture() {
+  if (!pendingCapture) return;
+  var done = pendingCapture;
+  pendingCapture = null;
+  renderExport(snapshotPerson());
+  done();
 }
 
 /* ══════════════════════════════════════════
-   EXPORT CANVAS (1080×1920)
+   DEMO — lets the composite be checked without a camera (?demo=1)
 ══════════════════════════════════════════ */
-async function renderExportCanvas() {
-  var W = 1080, H = 1920;
-  exportCanvas.width = W; exportCanvas.height = H;
-  var c = exportCtx;
+function buildDemoPerson() {
+  var vw = 720, vh = 960;
+  personCanvas.width = vw; personCanvas.height = vh;
+  var c = personCtx;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, vw, vh);
 
-  c.clearRect(0, 0, W, H);
-  c.fillStyle = '#FFFFFF';
-  c.fillRect(0, 0, W, H);
+  var g = c.createLinearGradient(0, 0, 0, vh);
+  g.addColorStop(0, '#6d7480');
+  g.addColorStop(1, '#2f343c');
+  c.fillStyle = g;
 
-  // Draw person
-  if (lastMask && lastImage) {
-    var cleanMask = refineMask(lastMask, W, H);
-    var tmp = document.createElement('canvas');
-    tmp.width = W; tmp.height = H;
-    var tCtx = tmp.getContext('2d');
-    tCtx.save();
-    if (isFront) { tCtx.translate(W, 0); tCtx.scale(-1, 1); }
-    tCtx.drawImage(cleanMask, 0, 0, W, H);
-    tCtx.globalCompositeOperation = 'source-in';
-    tCtx.drawImage(lastImage, 0, 0, W, H);
-    tCtx.restore();
-    c.drawImage(tmp, 0, 0, W, H);
-  }
+  var cx = vw / 2;
+  c.beginPath();                              // head
+  c.arc(cx, vh * 0.24, vw * 0.155, 0, Math.PI * 2);
+  c.fill();
+  c.beginPath();                              // shoulders + torso
+  c.moveTo(cx - vw * 0.135, vh * 0.40);
+  c.quadraticCurveTo(cx, vh * 0.345, cx + vw * 0.135, vh * 0.40);
+  c.lineTo(cx + vw * 0.30, vh * 0.62);
+  c.lineTo(cx + vw * 0.26, vh);
+  c.lineTo(cx - vw * 0.26, vh);
+  c.lineTo(cx - vw * 0.30, vh * 0.62);
+  c.closePath();
+  c.fill();
 
-  // Draw frame overlay
-  var fc = frameCache[currentFrame];
-  if (fc && fc.export) {
-    c.drawImage(fc.export, 0, 0, W, H);
-  }
-
-  // Draw dynamic record data on top of the bottom info bar
-  if (record && record.time) {
-    drawRecordOnExport(c, W, H);
-  }
-}
-
-function drawRecordOnExport(c, W, H) {
-  // The bottom bar area of both frames is roughly the bottom 22%
-  var barY = Math.round(H * 0.79);
-  var barH = H - barY;
-  var px = Math.round(W * 0.06);
-  var rx = W - px;
-
-  // Semi-transparent overlay to soften baked text
-  c.fillStyle = 'rgba(255,255,255,0.82)';
-  c.fillRect(0, barY, W, barH);
-
-  // Thin top border
-  c.strokeStyle = 'rgba(0,0,0,0.08)';
-  c.lineWidth = 1.5;
-  c.beginPath(); c.moveTo(px, barY + 10); c.lineTo(rx, barY + 10); c.stroke();
-
-  var textY = barY + 46;
-
-  // Left side: RUN.YOUR.CITY.
-  c.textAlign = 'left';
-  c.textBaseline = 'top';
-  c.fillStyle = '#111';
-  c.font = '800 48px ' + SANS;
-  c.fillText('RUN.', px, textY);
-  c.fillText('YOUR.', px, textY + 54);
-  c.fillText('CITY.', px, textY + 108);
-
-  // Hashtags
-  c.font = '500 18px ' + SANS;
-  c.fillStyle = 'rgba(0,0,0,0.35)';
-  c.fillText('#DARIMATI  #REXTREME  #다리마티  #렉스트림', px, textY + 170);
-
-  // Center: DARIMATI + icon
-  c.textAlign = 'center';
-  c.fillStyle = '#111';
-  c.font = '800 30px ' + SANS;
-  c.fillText('D A R I M A T I', W/2, textY + 36);
-  c.fillStyle = GOLD;
-  c.font = '700 18px ' + SANS;
-  c.fillText('REXTREME', W/2, textY + 72);
-
-  // Right: TIME + record
-  c.textAlign = 'right';
-
-  // TIME label
-  c.fillStyle = 'rgba(0,0,0,0.4)';
-  c.font = '600 16px ' + SANS;
-  c.fillText('TIME', rx, textY);
-
-  // Finish time (big)
-  c.fillStyle = '#111';
-  c.font = '900 52px ' + SANS;
-  c.fillText(record.time, rx, textY + 20);
-
-  // Category
-  c.fillStyle = 'rgba(0,0,0,0.55)';
-  c.font = '700 20px ' + SANS;
-  c.fillText(record.category, rx, textY + 82);
-
-  if (record.name) {
-    c.fillStyle = 'rgba(0,0,0,0.4)';
-    c.font = '600 18px ' + SANS;
-    c.fillText(record.name, rx, textY + 110);
-  }
-
-  // DATE
-  c.fillStyle = 'rgba(0,0,0,0.4)';
-  c.font = '600 16px ' + SANS;
-  c.fillText('DATE', rx, textY + 140);
-
-  c.fillStyle = '#111';
-  c.font = '800 28px ' + SANS;
-  c.fillText('2026.08.01', rx, textY + 160);
-
-  c.fillStyle = 'rgba(0,0,0,0.45)';
-  c.font = '600 18px ' + SANS;
-  c.fillText('수원컨벤션센터', rx, textY + 195);
+  personReady = true;
 }
 
 /* ══════════════════════════════════════════
    CAMERA START / FLIP
 ══════════════════════════════════════════ */
+function cameraErrorMessage(err) {
+  var name = err && err.name;
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return '카메라 권한이 거부되었습니다.<br>브라우저 설정에서 권한을 허용한 뒤 다시 시도해 주세요.';
+  }
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+    return '사용할 수 있는 카메라를 찾지 못했습니다.';
+  }
+  if (name === 'NotReadableError') {
+    return '카메라가 다른 앱에서 사용 중입니다.<br>해당 앱을 닫고 다시 시도해 주세요.';
+  }
+  if (err && err.message === 'NoMediaDevices') {
+    return '이 환경에서는 카메라 API를 쓸 수 없습니다.<br>https 주소(배포 링크) 또는 localhost로 열어 주세요.';
+  }
+  return '카메라를 시작할 수 없습니다. (' + (name || 'Error') + ')';
+}
+
+function failLanding(html) {
+  permMsg.innerHTML = html;
+  permMsg.classList.add('error');
+  startBtn.textContent = 'START CAMERA';
+}
+
 startBtn.addEventListener('click', async function() {
   startBtn.innerHTML = '<span class="loading"></span>';
+  permMsg.classList.remove('error');
 
-  // Load frames first
-  await loadAllFrames();
+  try {
+    await Promise.all([loadAllFrames(), loadFonts()]);
+  } catch (err) {
+    console.error(err);
+    failLanding('프레임 이미지를 불러오지 못했습니다.<br>새로고침 후 다시 시도해 주세요.');
+    return;
+  }
+
+  // Ask for the camera while the landing screen is still up, so a refusal has
+  // somewhere to be reported.
+  if (!DEMO) {
+    try {
+      await openStream();
+    } catch (err) {
+      console.error('Camera failed', err);
+      failLanding(cameraErrorMessage(err));
+      return;
+    }
+  }
 
   permScreen.style.display = 'none';
   app.style.display = 'block';
-  resizeDisplayCanvas();
+  sizePreviewCanvas();
+
+  if (DEMO) {
+    buildDemoPerson();
+    renderPreview();
+    return;
+  }
+
+  renderPreview();
+  segLoading.style.display = 'flex';
   initSegmentation();
+  startFrameLoop();
 });
 
-flipBtn.addEventListener('click', async function() {
+flipBtn.addEventListener('click', function() {
+  if (DEMO || !stream) return;
   facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  isFront = facingMode === 'user';
-  if (mpCamera) mpCamera.stop();
-  segLoading.style.display = 'flex';
-  mpCamera = new Camera(video, {
-    onFrame: async function() {
-      if (selfieSegmentation) await selfieSegmentation.send({image: video});
-    },
-    width: 720, height: 1280, facingMode: facingMode
-  });
-  mpCamera.start().then(function() {
-    segLoading.style.display = 'none';
-  }).catch(function(err) {
+  openStream().catch(function(err) {
     console.error('Flip failed', err);
-    segLoading.style.display = 'none';
+    // put the previous camera back
+    facingMode = facingMode === 'environment' ? 'user' : 'environment';
+    openStream().catch(function() {});
   });
 });
 
 /* ══════════════════════════════════════════
    CAPTURE
 ══════════════════════════════════════════ */
+function nextRenderedFrame() {
+  // DEMO and the no-camera case have no frame loop to wait on
+  if (DEMO) { renderExport(snapshotPerson()); return Promise.resolve(); }
+  return new Promise(function(resolve) {
+    pendingCapture = resolve;
+    setTimeout(function() {
+      if (pendingCapture === resolve) { pendingCapture = null; renderExport(snapshotPerson()); resolve(); }
+    }, 700);
+  });
+}
+
 captureBtn.addEventListener('click', async function() {
   if (shutterCountingDown) return;
   if (shutterDelay > 0) await doShutterCountdown(shutterDelay);
@@ -872,28 +1086,70 @@ captureBtn.addEventListener('click', async function() {
   document.body.appendChild(flash);
   setTimeout(function(){ flash.remove(); }, 380);
 
-  await renderExportCanvas();
-  capturedBlob = await new Promise(function(res) { exportCanvas.toBlob(res, 'image/jpeg', 0.93); });
-  reviewImage.src = URL.createObjectURL(capturedBlob);
+  await nextRenderedFrame();
+
+  var gen = ++exportGen;
+  var blob = await new Promise(function(res) { exportCanvas.toBlob(res, 'image/jpeg', 0.93); });
+  if (!blob || gen !== exportGen) return;
+  capturedBlob = blob;
+  reviewImage.src = URL.createObjectURL(blob);
+  reviewing = true;
+  syncFrameButtons();
   reviewScreen.style.display = 'flex';
 });
 
 /* ══════════════════════════════════════════
+   REVIEW-SCREEN EDITING — switch frame version or fix the record after the
+   shot; the frozen cutout is re-composited each time
+══════════════════════════════════════════ */
+function syncFrameButtons() {
+  filterBtns.forEach(function(b) { b.classList.toggle('active', b.dataset.filter === currentFrame); });
+  frameChips.forEach(function(ch) { ch.classList.toggle('active', ch.dataset.frame === currentFrame); });
+}
+
+function rebuildCapture() {
+  if (!reviewing) return;
+  var gen = ++exportGen;
+  renderExport(capturedPerson.width ? capturedPerson : null);
+  exportCanvas.toBlob(function(blob) {
+    if (!blob || !reviewing || gen !== exportGen) return;
+    var old = reviewImage.src;
+    capturedBlob = blob;
+    reviewImage.src = URL.createObjectURL(blob);
+    if (old) URL.revokeObjectURL(old);
+  }, 'image/jpeg', 0.93);
+}
+
+frameChips.forEach(function(ch) {
+  ch.addEventListener('click', function() {
+    if (currentFrame === ch.dataset.frame) return;
+    currentFrame = ch.dataset.frame;
+    syncFrameButtons();
+    sizePreviewCanvas();
+    if (DEMO) renderPreview();
+    rebuildCapture();
+  });
+});
+
+reviewRecordBtn.addEventListener('click', openRecordPanel);
+
+/* ══════════════════════════════════════════
    SHARE / DOWNLOAD
 ══════════════════════════════════════════ */
+var FILENAME = 'DARIMATI_20260801.jpg';
+
 shareBtn.addEventListener('click', async function() {
   if (!capturedBlob) return;
-  var fname = 'DARIMATI_20260801.jpg';
-  var file = new File([capturedBlob], fname, { type:'image/jpeg' });
+  var file = new File([capturedBlob], FILENAME, { type:'image/jpeg' });
   if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
     try { await navigator.share({ title:'DARIMATI Race Day', text:'#DARIMATI #REXTREME', files:[file] }); return; }
     catch(err) { if (err.name === 'AbortError') return; }
   }
-  triggerDownload(fname);
+  triggerDownload(FILENAME);
 });
 
 downloadBtn.addEventListener('click', function() {
-  triggerDownload('DARIMATI_20260801.jpg');
+  triggerDownload(FILENAME);
 });
 
 function triggerDownload(fname) {
@@ -904,15 +1160,9 @@ function triggerDownload(fname) {
 }
 
 retakeBtn.addEventListener('click', function() {
+  reviewing = false;
   reviewScreen.style.display = 'none';
   if (capturedBlob) { URL.revokeObjectURL(reviewImage.src); capturedBlob = null; }
-});
-
-/* ══════════════════════════════════════════
-   RESIZE
-══════════════════════════════════════════ */
-window.addEventListener('resize', function() {
-  if (app.style.display !== 'none') resizeDisplayCanvas();
 });
 
 })();
