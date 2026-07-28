@@ -508,6 +508,14 @@ var emptyStreak    = 0;
 var demoting       = false;
 var hqBusy         = false;     // capture-time refine in progress — live loop pauses
 var legacyStillCb  = null;      // one-shot intercept of the legacy onResults handler
+var taskProbe      = false;     // tasks ready while legacy runs — must prove itself live
+var probeTries     = 0;
+var probeCountdown = 0;
+
+// the model gets a canvas copy of the frame, never the video element —
+// iOS Safari can silently fail to texture-upload live video
+var segInput    = document.createElement('canvas');
+var segInputCtx = segInput.getContext('2d');
 // ?seg=tasks|legacy|none forces a segmenter (debugging aid)
 var segForceMatch  = location.search.match(/[?&]seg=(tasks|legacy|none)\b/);
 var segForce       = segForceMatch ? segForceMatch[1] : null;
@@ -1310,34 +1318,75 @@ function withTimeout(promise, ms) {
   })]);
 }
 
-/* Newest first: the multiclass Tasks segmenter (hair/skin/clothes classes →
-   far cleaner edges), then the 2021 selfie model, then raw video. The frame
-   loop runs from the start, so the camera shows immediately and the cutout
-   pops in when a model becomes ready. */
+/* Both segmenters start in parallel. The small legacy model brings the live
+   cutout up fast and is the reliable baseline; the multiclass Tasks model only
+   takes over after producing a real mask on this device's live frames — iOS
+   has passed init and then failed exactly there. */
 async function initSegmentation() {
   if (segForce === 'none') { console.info('[seg] forced: none'); return; }
-  if (segForce !== 'legacy' && window.__importModule) {
-    try {
-      taskSegmenter = await withTimeout(initTasksSegmenter('GPU'), 12000);
-      segMode = 'tasks';
-      console.info('[seg] mode: tasks (GPU)');
-      return;
-    } catch (err) { console.warn('[seg] tasks GPU failed', err); }
-    try {
-      taskSegmenter = await withTimeout(initTasksSegmenter('CPU'), 12000);
-      segMode = 'tasks';
-      console.info('[seg] mode: tasks (CPU)');
-      return;
-    } catch (err) { console.warn('[seg] tasks CPU failed', err); }
+
+  if (segForce !== 'tasks') {
+    (typeof SelfieSegmentation === 'undefined' ? loadScript(LEGACY_SEG) : Promise.resolve())
+      .then(function() {
+        initLegacySegmenter();
+        if (segMode === 'none') {
+          segMode = 'legacy';
+          console.info('[seg] mode: legacy');
+        }
+      })
+      .catch(function(err) { console.warn('[seg] legacy init failed', err); });
   }
+
+  if (segForce === 'legacy' || !window.__importModule) return;
+  var seg = null;
   try {
-    if (typeof SelfieSegmentation === 'undefined') await loadScript(LEGACY_SEG);
-    initLegacySegmenter();
-    segMode = 'legacy';
-    console.info('[seg] mode: legacy');
+    seg = await withTimeout(initTasksSegmenter('GPU'), 12000);
+    console.info('[seg] tasks ready (GPU)');
   } catch (err) {
-    console.warn('[seg] all segmenters failed — raw video', err);
-    segMode = 'none';
+    console.warn('[seg] tasks GPU failed', err);
+    try {
+      seg = await withTimeout(initTasksSegmenter('CPU'), 12000);
+      console.info('[seg] tasks ready (CPU)');
+    } catch (err2) { console.warn('[seg] tasks CPU failed', err2); }
+  }
+  if (!seg) return;
+  taskSegmenter = seg;
+  if (segMode === 'legacy') {
+    taskProbe = true;
+    probeTries = 0;
+    probeCountdown = 0;
+    console.info('[seg] probing tasks on live frames');
+  } else if (segMode === 'none') {
+    segMode = 'tasks';
+    console.info('[seg] mode: tasks');
+  }
+}
+
+function endProbe(reason) {
+  taskProbe = false;
+  console.warn('[seg] staying on legacy — ' + reason);
+  try { if (taskSegmenter) taskSegmenter.close(); } catch (e) {}
+  taskSegmenter = null;
+}
+
+function onProbeResult(result) {
+  var m = result.confidenceMasks && result.confidenceMasks[0];
+  var ok = false;
+  if (m) {
+    var f = m.getAsFloat32Array();     // background confidence
+    var need = (f.length / 4) * 0.02, n = 0;
+    for (var i = 0; i < f.length; i += 4) {
+      if (f[i] < 0.4 && ++n >= need) { ok = true; break; }
+    }
+  }
+  probeTries++;
+  if (ok) {
+    taskProbe = false;
+    maskEMA = null;
+    segMode = 'tasks';
+    console.info('[seg] mode: tasks (verified on live frames)');
+  } else if (probeTries >= 30) {
+    endProbe('no live mask after ' + probeTries + ' probes');
   }
 }
 
@@ -1349,7 +1398,13 @@ function demoteFromTasks(err) {
   console.warn('[seg] tasks failed at runtime — demoting to legacy', err);
   try { if (taskSegmenter) taskSegmenter.close(); } catch (e) {}
   taskSegmenter = null;
+  taskProbe = false;
   maskEMA = null;
+  if (selfieSegmentation) {           // already up from the parallel init
+    segMode = 'legacy';
+    console.info('[seg] mode: legacy (demoted)');
+    return;
+  }
   segMode = 'none';   // raw video only while legacy loads
   var load = (typeof SelfieSegmentation === 'undefined')
     ? loadScript(LEGACY_SEG) : Promise.resolve();
@@ -1367,7 +1422,7 @@ function demoteFromTasks(err) {
 function onTaskResult(result) {
   var masks = result.confidenceMasks;
   if (!masks || !masks[0]) return;
-  buildPersonLayer(video, refineTaskMask(masks[0]));
+  buildPersonLayer(segInput, refineTaskMask(masks[0]));
   renderPreview();
   flushCapture();
 
@@ -1384,6 +1439,13 @@ function startFrameLoop() {
   var warmedUp = false;
   async function tick() {
     if (video.readyState >= 2 && !hqBusy) {
+      // canvas copy of the frame — the model never sees the video element
+      if (segInput.width !== video.videoWidth || segInput.height !== video.videoHeight) {
+        segInput.width = video.videoWidth;
+        segInput.height = video.videoHeight;
+      }
+      segInputCtx.drawImage(video, 0, 0);
+
       if (segMode === 'tasks' && taskSegmenter) {
         try {
           // iOS coarsens performance.now() to 1ms, so two frames can read the
@@ -1393,19 +1455,27 @@ function startFrameLoop() {
           lastVideoTs = ts;
           // callback form: the result is only valid inside the callback and is
           // freed automatically afterwards
-          taskSegmenter.segmentForVideo(video, ts, onTaskResult);
+          taskSegmenter.segmentForVideo(segInput, ts, onTaskResult);
         } catch (err) {
           demoteFromTasks(err);
         }
       } else if (segMode === 'legacy' && selfieSegmentation) {
+        if (taskProbe && taskSegmenter && --probeCountdown <= 0) {
+          probeCountdown = 8;
+          try {
+            var pts = Math.max(lastVideoTs + 1, performance.now());
+            lastVideoTs = pts;
+            taskSegmenter.segmentForVideo(segInput, pts, onProbeResult);
+          } catch (perr) { endProbe('probe threw: ' + perr); }
+        }
         try {
-          await selfieSegmentation.send({ image: video });
+          await selfieSegmentation.send({ image: segInput });
         } catch (err) {
           console.error('[seg] legacy failed at runtime — raw video', err);
           selfieSegmentation = null; segMode = 'none';
         }
       } else {
-        buildPersonLayer(video, null);
+        buildPersonLayer(segInput, null);
         renderPreview();
         flushCapture();
       }
