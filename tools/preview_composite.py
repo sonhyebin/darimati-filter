@@ -14,8 +14,12 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-SIDE_FADE = 0.055    # keep in sync with index.html
-PERSON_FIT = 0.92    # keep in sync with index.html
+# keep in sync with index.html
+SIDE_FADE = 0.055
+PERSON_FIT = 0.92    # fallback when no person detected
+PERSON_H = 0.80      # person bbox height as a fraction of stage height
+PERSON_W = 0.88      # cap: person bbox width as a fraction of stage width
+MAX_ZOOM = 2.2       # cap: drawn frame height ≤ this × stage height
 
 OUT_DIR = "/private/tmp/claude-501/-Users-sonhyebin-Desktop---------/95b69dfb-508b-45ae-afac-348f39d7726a/scratchpad"
 
@@ -103,13 +107,26 @@ def composite(key, record, person):
     st = d["stage"]
     sx, sy = st["x"] * W, st["y"] * H
     sw, sh = st["w"] * W, st["h"] * H
-    scale = PERSON_FIT * min(sw / person.width, sh / person.height)
-    dw, dh = person.width * scale, person.height * scale
-
+    # person bbox from the alpha channel — same normalisation as index.html
+    a = np.array(person.getchannel("A"))
+    ys, xs = np.where(a > 127)
     stage = Image.new("RGBA", (int(round(sw)), int(round(sh))), (0, 0, 0, 0))
-    # centred horizontally, standing on the box floor
+    if len(ys):
+        bx0, bx1 = xs.min() / person.width, (xs.max() + 1) / person.width
+        by0, by1 = ys.min() / person.height, (ys.max() + 1) / person.height
+        bh = (by1 - by0) * person.height
+        bw = (bx1 - bx0) * person.width
+        scale = min(PERSON_H * sh / bh, PERSON_W * sw / bw, MAX_ZOOM * sh / person.height)
+        dw, dh = person.width * scale, person.height * scale
+        cx = (bx0 + bx1) / 2
+        dx = sw / 2 - cx * dw            # person centred in the box
+        dy = sh - by1 * dh               # person bottom on the box floor
+    else:
+        scale = PERSON_FIT * min(sw / person.width, sh / person.height)
+        dw, dh = person.width * scale, person.height * scale
+        dx, dy = (sw - dw) / 2, sh - dh
     stage.alpha_composite(person.resize((int(round(dw)), int(round(dh))), Image.LANCZOS),
-                          (int(round((sw - dw) / 2)), int(round(sh - dh))))
+                          (int(round(dx)), int(round(dy))))
 
     # soften the vertical edges (SIDE_FADE in index.html)
     edge = max(1.0, SIDE_FADE * stage.width)

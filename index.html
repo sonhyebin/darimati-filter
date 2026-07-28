@@ -469,6 +469,12 @@ var personReady  = false;
 var capturedPerson = document.createElement('canvas');
 var capturedPersonCtx = capturedPerson.getContext('2d');
 var reviewing = false;
+
+// person bounding box in the camera frame ({x0,y0,x1,y1} fractions, smoothed
+// over time so the live preview doesn't wobble), and its frozen capture copy
+var personBox = null;
+var capturedPersonBox = null;
+var lastMaskBox = null;
 // JPEG encoding is async and can be slow; the generation counter stops a stale
 // encode from overwriting a newer one when edits come in quick succession
 var exportGen = 0;
@@ -645,13 +651,26 @@ function refineMask(rawMask, aspect) {
   var imageData = maskCtx.getImageData(0, 0, mw, mh);
   var data = imageData.data;
   var span = MASK_HI - MASK_LO;
+  var minX = mw, minY = mh, maxX = -1, maxY = -1;
   for (var i = 3; i < data.length; i += 4) {
     var a = data[i];
     if (a >= MASK_HI) data[i] = 255;
     else if (a <= MASK_LO) data[i] = 0;
     else data[i] = ((a - MASK_LO) / span * 255) | 0;
+    if (data[i] > 127) {
+      var p = i >> 2, x = p % mw, y = (p / mw) | 0;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
   }
   maskCtx.putImageData(imageData, 0, 0);
+
+  // person bounding box — anything shorter than ~12% of the frame is noise
+  lastMaskBox = (maxY - minY) > mh * 0.12
+    ? { x0: minX / mw, y0: minY / mh, x1: (maxX + 1) / mw, y1: (maxY + 1) / mh }
+    : null;
 
   if (!CTX_FILTER_OK) return maskCanvas;
 
@@ -691,6 +710,23 @@ function buildPersonLayer(image, rawMask) {
   personCtx.setTransform(1, 0, 0, 1, 0, 0);
   personCtx.globalCompositeOperation = 'source-over';
   personReady = true;
+
+  // smooth the detected box over time so the framing doesn't wobble
+  var raw = (rawMask && lastMaskBox)
+    ? { x0: lastMaskBox.x0, y0: lastMaskBox.y0, x1: lastMaskBox.x1, y1: lastMaskBox.y1, mirrored: isFront }
+    : null;
+  if (raw && personBox && personBox.mirrored === raw.mirrored) {
+    var k = 0.3;
+    personBox = {
+      x0: personBox.x0 + (raw.x0 - personBox.x0) * k,
+      y0: personBox.y0 + (raw.y0 - personBox.y0) * k,
+      x1: personBox.x1 + (raw.x1 - personBox.x1) * k,
+      y1: personBox.y1 + (raw.y1 - personBox.y1) * k,
+      mirrored: raw.mirrored
+    };
+  } else {
+    personBox = raw;
+  }
   return true;
 }
 
@@ -705,11 +741,16 @@ function buildPersonLayer(image, rawMask) {
    bottom stays a hard cut — that is the floor line the person stands on. */
 var SIDE_FADE = 0.055;
 
-// contain-fit margin: the whole camera frame stays inside the box with a
-// little air, however the shot is framed
+// contain-fit margin, used only when no person is detected (raw-video fallback)
 var PERSON_FIT = 0.92;
 
-function buildStageLayer(person, sw, sh) {
+// with a detected person, the shot is normalised by their mask bounding box so
+// everyone lands at the same size regardless of how the photo was framed
+var PERSON_H  = 0.80;  // person height as a fraction of stage height
+var PERSON_W  = 0.88;  // cap: person width as a fraction of stage width
+var MAX_ZOOM  = 2.2;   // cap: drawn frame height ≤ this × stage height (far-away person)
+
+function buildStageLayer(person, box, sw, sh) {
   if (stageCanvas.width !== sw || stageCanvas.height !== sh) {
     stageCanvas.width = sw; stageCanvas.height = sh;
   }
@@ -718,10 +759,26 @@ function buildStageLayer(person, sw, sh) {
   c.globalCompositeOperation = 'source-over';
   c.clearRect(0, 0, sw, sh);
 
-  var scale = PERSON_FIT * Math.min(sw / person.width, sh / person.height);
-  var dw = person.width * scale, dh = person.height * scale;
-  // centred horizontally, standing on the box floor
-  c.drawImage(person, (sw - dw) / 2, sh - dh, dw, dh);
+  var scale, dx, dy;
+  if (box) {
+    // size by the person, not the camera frame: their bbox height lands at
+    // PERSON_H of the stage whatever the framing of the shot was
+    var bh = (box.y1 - box.y0) * person.height;
+    var bw = (box.x1 - box.x0) * person.width;
+    scale = Math.min(PERSON_H * sh / bh, PERSON_W * sw / bw, MAX_ZOOM * sh / person.height);
+    var dwB = person.width * scale, dhB = person.height * scale;
+    // the person canvas may be mirrored; the box was measured on the raw mask
+    var cx = (box.x0 + box.x1) / 2;
+    if (box.mirrored) cx = 1 - cx;
+    dx = sw / 2 - cx * dwB;          // person centred in the box
+    dy = sh - box.y1 * dhB;          // person bottom on the box floor
+    c.drawImage(person, dx, dy, dwB, dhB);
+  } else {
+    // no detection — contain-fit the whole frame, standing on the floor
+    scale = PERSON_FIT * Math.min(sw / person.width, sh / person.height);
+    var dw = person.width * scale, dh = person.height * scale;
+    c.drawImage(person, (sw - dw) / 2, sh - dh, dw, dh);
+  }
 
   c.globalCompositeOperation = 'destination-in';
   var g = c.createLinearGradient(0, 0, sw, 0);
@@ -736,7 +793,7 @@ function buildStageLayer(person, sw, sh) {
   return stageCanvas;
 }
 
-function drawComposite(ctx, W, H, key, plate, person) {
+function drawComposite(ctx, W, H, key, plate, person, box) {
   var def = FRAME_DEFS[key];
   var assets = frameAssets[key] || {};
 
@@ -754,7 +811,7 @@ function drawComposite(ctx, W, H, key, plate, person) {
     var st = def.stage;
     var sx = Math.round(st.x * W), sy = Math.round(st.y * H);
     var sw = Math.round(st.w * W), sh = Math.round(st.h * H);
-    var layer = buildStageLayer(person, sw, sh);
+    var layer = buildStageLayer(person, box, sw, sh);
 
     ctx.save();
     ctx.beginPath();
@@ -845,27 +902,28 @@ function previewPlate(key, W, H) {
 function renderPreview() {
   var W = displayCanvas.width, H = displayCanvas.height;
   drawComposite(displayCtx, W, H, currentFrame, previewPlate(currentFrame, W, H),
-                personReady ? personCanvas : null);
+                personReady ? personCanvas : null, personBox);
 }
 
 /* ══════════════════════════════════════════
    EXPORT — rendered at the frame's native resolution
 ══════════════════════════════════════════ */
-function renderExport(person) {
+function renderExport(person, box) {
   var def = FRAME_DEFS[currentFrame];
   var assets = frameAssets[currentFrame] || {};
   exportCanvas.width = def.w;
   exportCanvas.height = def.h;
-  drawComposite(exportCtx, def.w, def.h, currentFrame, assets.plate || null, person);
+  drawComposite(exportCtx, def.w, def.h, currentFrame, assets.plate || null, person, box);
 }
 
-/* Freeze the current cutout so review-screen edits keep re-compositing the
-   same shot instead of whatever the camera sees now. */
+/* Freeze the current cutout (and its box) so review-screen edits keep
+   re-compositing the same shot instead of whatever the camera sees now. */
 function snapshotPerson() {
   if (!personReady || !personCanvas.width) return null;
   capturedPerson.width = personCanvas.width;
   capturedPerson.height = personCanvas.height;
   capturedPersonCtx.drawImage(personCanvas, 0, 0);
+  capturedPersonBox = personBox;
   return capturedPerson;
 }
 
@@ -953,7 +1011,7 @@ function flushCapture() {
   if (!pendingCapture) return;
   var done = pendingCapture;
   pendingCapture = null;
-  renderExport(snapshotPerson());
+  renderExport(snapshotPerson(), capturedPersonBox);
   done();
 }
 
@@ -987,6 +1045,8 @@ function buildDemoPerson() {
   c.fill();
 
   personReady = true;
+  // bbox of the silhouette above (head top = 0.24·vh − 0.155·vw)
+  personBox = { x0: 0.2, y0: 0.124, x1: 0.8, y1: 1, mirrored: false };
 }
 
 /* ══════════════════════════════════════════
@@ -1071,11 +1131,11 @@ flipBtn.addEventListener('click', function() {
 ══════════════════════════════════════════ */
 function nextRenderedFrame() {
   // DEMO and the no-camera case have no frame loop to wait on
-  if (DEMO) { renderExport(snapshotPerson()); return Promise.resolve(); }
+  if (DEMO) { renderExport(snapshotPerson(), capturedPersonBox); return Promise.resolve(); }
   return new Promise(function(resolve) {
     pendingCapture = resolve;
     setTimeout(function() {
-      if (pendingCapture === resolve) { pendingCapture = null; renderExport(snapshotPerson()); resolve(); }
+      if (pendingCapture === resolve) { pendingCapture = null; renderExport(snapshotPerson(), capturedPersonBox); resolve(); }
     }, 700);
   });
 }
@@ -1113,7 +1173,7 @@ function syncFrameButtons() {
 function rebuildCapture() {
   if (!reviewing) return;
   var gen = ++exportGen;
-  renderExport(capturedPerson.width ? capturedPerson : null);
+  renderExport(capturedPerson.width ? capturedPerson : null, capturedPersonBox);
   exportCanvas.toBlob(function(blob) {
     if (!blob || !reviewing || gen !== exportGen) return;
     var old = reviewImage.src;
