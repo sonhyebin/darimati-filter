@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <title>DARIMATI — Race Day Filter</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -68,6 +69,16 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
 .cta-notice {
   font-family:var(--kr);
   font-size:0.6rem; color:rgba(0,0,0,0.35); line-height:1.7; max-width:260px; text-align:center;
+}
+.inapp-notice {
+  display:none; margin-top:0.9rem; background:#fff7e6; border:1px solid #e8c98a;
+  padding:0.7rem 0.95rem; font-family:var(--kr); font-size:0.68rem; color:#8a6d3b;
+  line-height:1.65; max-width:300px; text-align:center; border-radius:8px;
+}
+.inapp-notice a {
+  display:inline-block; margin-top:0.5rem; background:#111; color:#fff;
+  padding:0.5rem 1.1rem; text-decoration:none; font-weight:700;
+  font-size:0.66rem; letter-spacing:0.06em; border-radius:4px;
 }
 .hero-bottom-mark {
   position:absolute; bottom:calc(1.5rem + var(--safe-bottom)); left:0; right:0;
@@ -253,6 +264,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:#f0f0f0; font-f
       <button id="startCameraBtn">START CAMERA</button>
       <p class="msg" id="permMsg"></p>
       <p class="cta-notice">카메라 접근 권한이 필요합니다.<br>촬영한 사진은 기기에만 저장됩니다.</p>
+      <div class="inapp-notice" id="inappNotice"></div>
     </div>
     <p class="hero-bottom-mark">DARIMATI &nbsp;·&nbsp; Race Day Filter</p>
   </section>
@@ -428,6 +440,26 @@ var LEGACY_SEG   = 'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/
 var PREVIEW_LONG_EDGE = 900;
 
 var DEMO = /[?&]demo\b/.test(location.search);
+
+/* ── in-app browsers (KakaoTalk, Instagram…) restrict the camera — steer the
+   user to a real browser before they hit a dead camera ── */
+(function() {
+  var ua = navigator.userAgent;
+  var el = document.getElementById('inappNotice');
+  if (!el) return;
+  var url = location.href;
+  if (/KAKAOTALK/i.test(ua)) {
+    el.innerHTML = '카카오톡 안에서는 카메라가 열리지 않을 수 있어요.<br>' +
+      '<a href="kakaotalk://web/openExternal?url=' + encodeURIComponent(url) + '">기본 브라우저로 열기</a>';
+    el.style.display = 'block';
+  } else if (/\bLine\//i.test(ua) && url.indexOf('openExternalBrowser=1') === -1) {
+    location.replace(url + (url.indexOf('?') > -1 ? '&' : '?') + 'openExternalBrowser=1');
+  } else if (/Instagram|FBAN|FBAV|NAVER\(inapp/i.test(ua)) {
+    el.innerHTML = '앱 안의 브라우저에서는 카메라가 열리지 않을 수 있어요.<br>' +
+      '오른쪽 위 ⋯ 메뉴에서 <b>다른 브라우저로 열기</b>를 눌러 주세요.';
+    el.style.display = 'block';
+  }
+})();
 
 /* ══════════════════════════════════════════
    DOM REFS
@@ -1274,6 +1306,10 @@ function flushCapture() {
    foreground → person → original: tasks → legacy → no cutout.
 ══════════════════════════════════════════ */
 var HQ_LO = 0.38, HQ_HI = 0.80;
+// the per-pixel refine work runs at this width cap — full capture resolution
+// would double the transient memory for no visible edge gain, and low-memory
+// phones kill the tab over it. Compositing still happens at full resolution.
+var HQ_WORK_W = 768;
 
 function segmentStill(source, engine) {
   if (engine === 'tasks' && taskSegmenter) {
@@ -1533,7 +1569,17 @@ async function captureHQ() {
   try {
     // let an in-flight live box scan drain so the legacy engine is free
     if (liveBoxInflight) { try { await liveBoxInflight; } catch (e) {} }
-    var raw = capturedRaw, W = raw.width, H = raw.height;
+    var fullW = capturedRaw.width, fullH = capturedRaw.height;
+
+    // work on a capped copy of the still
+    var raw = capturedRaw, W = fullW, H = fullH;
+    if (fullW > HQ_WORK_W) {
+      W = HQ_WORK_W;
+      H = Math.round(fullH * HQ_WORK_W / fullW);
+      raw = document.createElement('canvas');
+      raw.width = W; raw.height = H;
+      raw.getContext('2d').drawImage(capturedRaw, 0, 0, W, H);
+    }
 
     // pass 1: whole still, engine chain — tasks, then legacy
     var best = await segmentStillBest(raw);
@@ -1574,7 +1620,7 @@ async function captureHQ() {
     }
 
     // pass 3: snap to image edges
-    var id = capturedRawCtx.getImageData(0, 0, W, H).data;
+    var id = raw.getContext('2d').getImageData(0, 0, W, H).data;
     var gray = new Float32Array(W * H);
     for (var i = 0; i < gray.length; i++) {
       var j = i << 2;
@@ -1608,11 +1654,12 @@ async function captureHQ() {
     }
     if (maxY <= minY) return;   // nobody found — ship the photo uncut
 
-    capturedPerson.width = W; capturedPerson.height = H;
-    capturedPersonCtx.clearRect(0, 0, W, H);
-    capturedPersonCtx.drawImage(floatToAlphaCanvas(q, W, H), 0, 0);
+    // composite at full capture resolution — the alpha upscales bilinearly
+    capturedPerson.width = fullW; capturedPerson.height = fullH;
+    capturedPersonCtx.clearRect(0, 0, fullW, fullH);
+    capturedPersonCtx.drawImage(floatToAlphaCanvas(q, W, H), 0, 0, fullW, fullH);
     capturedPersonCtx.globalCompositeOperation = 'source-in';
-    capturedPersonCtx.drawImage(raw, 0, 0);
+    capturedPersonCtx.drawImage(capturedRaw, 0, 0);
     capturedPersonCtx.globalCompositeOperation = 'source-over';
     // measured on the already-mirrored still, so no mirror flag
     capturedPersonBox = { x0: minX / W, y0: minY / H, x1: (maxX + 1) / W, y1: (maxY + 1) / H, mirrored: false };
